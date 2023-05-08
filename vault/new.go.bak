@@ -1,0 +1,111 @@
+package vault
+
+import (
+  "context"
+  "fmt"
+  "log"
+
+  "github.com/hashicorp/vault-client-go"
+  //"github.com/hashicorp/vault-client-go/schema"
+)
+
+// secret engine with pseudo-enum
+type secretEngine string
+
+const (
+  dbEngine     secretEngine = "DB"
+  awsIAMEngine secretEngine = "AWS IAM"
+  kv1Engine    secretEngine = "KV1"
+  kv2Engine    secretEngine = "KV2"
+)
+
+// instantiate authenticated vault client with aws-iam auth
+func awsIAMAuthClient(vaultAddress string, awsMountPath string) *vault.Client {
+  // initialize unauthenticated vault client
+  client, err := vault.New(vault.WithAddress(vaultAddress))
+  if err != nil {
+    log.Print("Vault client failed to initialize")
+    log.Fatal(err)
+  }
+
+  // verify vault is unsealed
+  sealResponse, err := client.System.SealStatus(context.Background())
+  if err != nil {
+    log.Print("Unable to verify that the Vault cluster is unsealed")
+    log.Fatal(err)
+  }
+  if sealResponse.Data.Sealed {
+    log.Fatal("The Vault cluster is sealed and no operations can be executed")
+  }
+
+  // login with vault via aws iam instance profile role
+  // https://github.com/hashicorp/vault-client-go/issues/147
+  /*defaultRequest := schema.NewAwsLoginRequestWithDefaults()
+  response, err := client.Auth.AwsLogin(
+    context.Background(),
+    *defaultRequest,
+    vault.WithMountPath(awsMountPath),
+  )*/
+  response, err := client.Write(
+    context.Background(),
+    fmt.Sprintf("/auth/%s/login", awsMountPath),
+    map[string]any{},
+  )
+  if err != nil {
+    log.Print("AWS IAM Instance Profile authentication failed")
+    log.Fatal(err)
+  }
+  if response == nil {
+    log.Fatal("Empty response from AWS authentication endpoint")
+  }
+
+  return client
+}
+
+// retrieve and return secrets
+func retrieveSecrets(client *vault.Client, engine secretEngine, path string, mountPath string) map[string]interface{} {
+  // declare func scope variables
+  var response *vault.Response[map[string]interface{}]
+  var err error
+  vaultMountPath := vault.WithMountPath(mountPath)
+
+  switch engine {
+  case dbEngine:
+    // read db secret (in this case path signifies role name)
+    response, err = client.Secrets.DatabaseGenerateCredentials(
+      context.Background(),
+      path,
+      vaultMountPath,
+    )
+  case awsIAMEngine:
+    // read aws iam secret (in this case path signifies role name)
+    response, err = client.Secrets.AwsGenerateCredentials(
+      context.Background(),
+      path,
+      vaultMountPath,
+    )
+  case kv1Engine:
+    // read kv1 secret
+    response, err = client.Secrets.KvV1Read(
+      context.Background(),
+      path,
+      vaultMountPath,
+    )
+  /*case kv2Engine:
+    // read kv2 secret
+    response, err = client.Secrets.KvV2Read(
+      context.Background(),
+      path,
+      vaultMountPath,
+    )*/
+  }
+
+  // verify secret read
+  log.Print(response)
+  if err != nil {
+    log.Printf("Failed to read secret from %s Secrets Engine", engine)
+    log.Fatal(err)
+  }
+
+  return response.Data
+}

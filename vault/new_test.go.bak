@@ -1,0 +1,34 @@
+package vault
+
+import (
+  "context"
+  "testing"
+
+  "github.com/hashicorp/vault-client-go"
+)
+
+const (
+  testVaultAddress = "http://127.0.0.1:8200"
+  testVaultToken   = "hvs.IZrMVkhZTIYgyArfMEhmLXsP"
+)
+
+// bootstraps a vault server for later testing
+func TestBootstrapVault(test *testing.T) {
+  // instantiate and authenticate client with root token
+  client, _ := vault.New(vault.WithAddress(testVaultAddress))
+  client.SetToken(testVaultToken)
+
+  // kv1 write
+  client.Secrets.KvV1Write(
+    context.Background(),
+    "foo",
+  )
+}
+
+func TestRetrieveSecrets(test *testing.T) {
+  // instantiate and authenticate client with root token
+  client, _ := vault.New(vault.WithAddress(testVaultAddress))
+  client.SetToken(testVaultToken)
+
+  retrieveSecrets(client, kv1Engine, "foo", "kv")
+}
