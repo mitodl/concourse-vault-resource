@@ -1,46 +1,43 @@
 package vault
 
 import (
-  "testing"
-
-  "github.com/mitodl/concourse-vault-resource/concourse"
+	"testing"
 )
 
 // global test helpers
 const (
-  testVaultAddress = "http://127.0.0.1:8200"
-  testVaultToken   = "hvs.IZrMVkhZTIYgyArfMEhmLXsP"
+	testVaultAddress = "http://127.0.0.1:8200"
+	testVaultToken   = "hvs.IZrMVkhZTIYgyArfMEhmLXsP"
 )
 
-var basicConcourseParams = &concourse.Params{
-  VaultAddr: testVaultAddress,
-  Token:     testVaultToken,
-  Insecure:  true,
+var basicVaultConfig = &VaultConfig{
+	VaultAddr: testVaultAddress,
+	Token:     testVaultToken,
+	Insecure:  true,
 }
-
-var basicVaultConfig = NewVaultConfig(basicConcourseParams)
-var BasicVaultClient = basicVaultConfig.authClient()
 
 // test config constructor
 func TestNewVaultConfig(test *testing.T) {
-  newVaultConfig := NewVaultConfig(basicConcourseParams)
+	basicVaultConfig.New()
 
-  if newVaultConfig.vaultAddr != testVaultAddress || newVaultConfig.token != testVaultToken || newVaultConfig.insecure != basicConcourseParams.Insecure {
-    test.Error("the Vault config constructor returned unexpected values.")
-    test.Errorf("expected Vault Address: %s, actual: %s", testVaultAddress, newVaultConfig.vaultAddr)
-    test.Errorf("expected Vault Token: %s, actual: %s", testVaultToken, newVaultConfig.token)
-    test.Errorf("expected Vault Insecure: %t, actual: %t", basicConcourseParams.Insecure, newVaultConfig.insecure)
-  }
+	if basicVaultConfig.Engine != token || basicVaultConfig.VaultAddr != testVaultAddress || basicVaultConfig.AWSMountPath != "aws"  || basicVaultConfig.Token != testVaultToken || !basicVaultConfig.Insecure {
+		test.Error("the Vault config constructor returned unexpected values.")
+		test.Errorf("expected Auth Engine: %s, actual: %s", token, basicVaultConfig.Engine)
+		test.Errorf("expected Vault Address: %s, actual: %s", testVaultAddress, basicVaultConfig.VaultAddr)
+		test.Errorf("expected AWS Mount Path: aws, actual: %s", basicVaultConfig.AWSMountPath)
+		test.Errorf("expected Vault Token: %s, actual: %s", testVaultToken, basicVaultConfig.Token)
+		test.Errorf("expected Vault Insecure: %t, actual: %t", basicVaultConfig.Insecure, basicVaultConfig.Insecure)
+	}
 }
 
 // test client error messages
 
 // test client token authentication
 func TestAuthClient(test *testing.T) {
-  vaultClient := basicVaultConfig.authClient()
+  basicVaultClient := basicVaultConfig.authClient()
 
-  if vaultClient.Token() != testVaultToken {
-    test.Error("the authenticated Vault client return failed basic validation")
-    test.Errorf("expected Vault token: %s, actual: %s", testVaultToken, vaultClient.Token())
-  }
+	if basicVaultClient.Token() != testVaultToken {
+		test.Error("the authenticated Vault client return failed basic validation")
+		test.Errorf("expected Vault token: %s, actual: %s", testVaultToken, basicVaultClient.Token())
+	}
 }

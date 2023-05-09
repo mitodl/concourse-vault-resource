@@ -1,83 +1,107 @@
 package vault
 
 import (
-  "log"
-  "context"
+	"context"
+	"log"
 
-  vault "github.com/hashicorp/vault/api"
+	vault "github.com/hashicorp/vault/api"
 	auth "github.com/hashicorp/vault/api/auth/aws"
-
-  "github.com/mitodl/concourse-vault-resource/concourse"
 )
 
-// vaultConfig defines vault api interface config
-type vaultConfig struct {
-	vaultAddr    string
-	token        string
-	awsMountPath string
-	insecure     bool
+// authentication engine with pseudo-enum
+type AuthEngine string
+
+const (
+	awsIam AuthEngine = "AWS IAM"
+	token  AuthEngine = "TOKEN"
+)
+
+// VaultConfig defines vault api interface config
+type VaultConfig struct {
+	Engine       AuthEngine
+	VaultAddr    string
+	AWSMountPath string
+	Token        string
+	Insecure     bool
 }
 
-// vaultConfig constructor
-func NewVaultConfig(params *concourse.Params) *vaultConfig {
-  // initialize vault config return from concourse params
-  newVaultConfig := &vaultConfig{
-    vaultAddr:    params.VaultAddr,
-    token:        params.Token,
-    awsMountPath: params.AWSMountPath,
-    insecure:     params.Insecure,
-  }
+// VaultConfig constructor
+func (config *VaultConfig) New() {
+	// validate authentication inputs
+	if len(config.Token) > 0 && len(config.AWSMountPath) > 0 {
+		log.Fatal("Token and AWS authentication were simultaneously selected; these are mutually exclusive options")
+	}
+	if len(config.Token) > 0 && len(config.Token) != 28 {
+		log.Fatal("the specified Vault Token is invalid")
+	}
+	if len(config.Token) == 0 {
+		log.Print("AWS IAM authentication will be utilized with the Vault client")
+		config.Engine = awsIam
+	} else {
+		log.Print("Token authentication will be utilized with the Vault client")
+		config.Engine = token
+	}
 
-  return newVaultConfig
+	// vault address
+	if len(config.VaultAddr) == 0 {
+		config.VaultAddr = "http://127.0.0.1:8200"
+	}
+
+	// aws mount path
+	if len(config.AWSMountPath) == 0 {
+		config.AWSMountPath = "aws"
+	}
 }
 
 // instantiate authenticated vault client with aws-iam auth
-func (config *vaultConfig) authClient() *vault.Client {
-  // initialize config
-	vaultConfig := &vault.Config{Address: config.vaultAddr}
-	err := vaultConfig.ConfigureTLS(&vault.TLSConfig{Insecure: config.insecure})
+func (config *VaultConfig) authClient() *vault.Client {
+	// initialize config
+	VaultConfig := &vault.Config{Address: config.VaultAddr}
+	err := VaultConfig.ConfigureTLS(&vault.TLSConfig{Insecure: config.Insecure})
 	if err != nil {
 		log.Print("Vault TLS configuration failed to initialize")
 		log.Fatal(err)
 	}
 
 	// initialize client
-	client, err := vault.NewClient(vaultConfig)
+	client, err := vault.NewClient(VaultConfig)
 	if err != nil {
 		log.Print("Vault client failed to initialize")
 		log.Fatal(err)
 	}
 
-  // verify vault is unsealed
-  sealStatus, err := client.Sys().SealStatus()
-  if err != nil {
-    log.Print("unable to verify that the Vault cluster is unsealed")
-    log.Fatal(err)
-  }
-  if sealStatus.Sealed {
-    log.Fatal("the Vault cluster is sealed and no operations can be executed")
-  }
+	// verify vault is unsealed
+	sealStatus, err := client.Sys().SealStatus()
+	if err != nil {
+		log.Print("unable to verify that the Vault cluster is unsealed")
+		log.Fatal(err)
+	}
+	if sealStatus.Sealed {
+		log.Fatal("the Vault cluster is sealed and no operations can be executed")
+	}
 
 	// determine authentication method
-	if len(config.token) > 0 {
-		client.SetToken(config.token)
-	} else {
-    // authenticate with aws iam
+	log.Print(config.Engine)
+	switch config.Engine {
+	case token:
+		client.SetToken(config.Token)
+	case awsIam:
+		// authenticate with aws iam
 		awsAuth, err := auth.NewAWSAuth(auth.WithIAMAuth())
 		if err != nil {
-			log.Fatal("Unable to initialize AWS IAM authentication")
+			log.Fatal("unable to initialize AWS IAM authentication")
 		}
 
-		authInfo, err := client.Auth().Login(context.TODO(), awsAuth)
+		authInfo, err := client.Auth().Login(context.Background(), awsAuth)
 		if err != nil {
-			log.Print("Unable to login to AWS IAM auth method")
-      log.Fatal(err)
+			log.Print("unable to login to AWS IAM auth method")
+			log.Fatal(err)
 		}
 		if authInfo == nil {
-			log.Fatal("No auth info was returned after login")
+			log.Fatal("no auth info was returned after login")
 		}
 	}
 
 	// return authenticated vault client
-  return client
+	return client
 }
