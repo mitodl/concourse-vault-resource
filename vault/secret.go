@@ -11,13 +11,13 @@ import (
 type SecretEngine string
 
 const (
-	database  SecretEngine = "DB"
-	aws       SecretEngine = "AWS"
-	keyvalue1 SecretEngine = "KV1"
-	keyvalue2 SecretEngine = "KV2"
+	database  SecretEngine = "database"
+	aws       SecretEngine = "aws"
+	keyvalue1 SecretEngine = "kv1"
+	keyvalue2 SecretEngine = "kv2"
 )
 
-// secret defines a composite Vault secret configuration
+// secret defines a composite Vault secret configuration; TODO: convert value into kv or cred value and propagate to concourse models metadata.values?
 type VaultSecret struct {
 	Engine SecretEngine
 	Path   string
@@ -25,9 +25,11 @@ type VaultSecret struct {
 	Value  map[string]interface{}
 }
 
+// secret constructor; TODO: validate inputs
 func (secret *VaultSecret) New() {
 	// determine default mount path if not specified
-  if len(secret.Mount) == 0 {
+	// note current schema renders this pointless, but it would ensure safety to retain
+	if len(secret.Mount) == 0 {
 		switch secret.Engine {
 		case database:
 			secret.Mount = "database"
@@ -39,7 +41,19 @@ func (secret *VaultSecret) New() {
 			secret.Mount = "secret"
 		default:
 			log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
-	  }
+		}
+	}
+}
+
+// populate secret type struct with value
+func (secret *VaultSecret) PopulateSecret(client *vault.Client) {
+	switch secret.Engine {
+	case database, aws:
+		secret.generateCredentials(client)
+	case keyvalue1, keyvalue2:
+		secret.retrieveKVSecret(client)
+	default:
+		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
 	}
 }
 
@@ -54,7 +68,7 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) {
 		log.Fatal(err)
 	}
 
-  // assign secret value and implicitly coerce type to map[string]interface{}
+	// assign secret value and implicitly coerce type to map[string]interface{}
 	secret.Value = response.Data
 }
 
@@ -76,6 +90,8 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) {
 			context.Background(),
 			secret.Path,
 		)
+	default:
+		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
 	}
 
 	// verify secret read

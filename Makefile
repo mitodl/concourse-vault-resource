@@ -1,5 +1,8 @@
 .PHONY: build
 
+fmt:
+	@go fmt ./...
+
 tidy:
 	@go mod tidy
 
@@ -16,8 +19,8 @@ unit:
 bootstrap:
 	#@vault server -dev
 	@vault auth enable aws
-  @vault secrets enable database
+	@vault secrets enable database
 	@vault secrets enable aws
 	@vault secrets enable -version=1 kv
-  @vault kv put -mount=kv foo/bar password=supersecret
-  @vault kv put -mount=secret foo/bar password=supersecret
+	@vault kv put -mount=kv foo/bar password=supersecret
+	@vault kv put -mount=secret foo/bar password=supersecret

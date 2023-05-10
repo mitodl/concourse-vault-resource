@@ -38,7 +38,7 @@ func TestNewVaultSecret(test *testing.T) {
 
 // test secret key value secret
 func TestRetrieveKVSecret(test *testing.T) {
-	basicVaultClient := basicVaultConfig.authClient()
+	basicVaultClient := basicVaultConfig.AuthClient()
 
 	kv1VaultSecret := &VaultSecret{
 		Engine: keyvalue1,
@@ -65,3 +65,5 @@ func TestRetrieveKVSecret(test *testing.T) {
 		test.Errorf("secret map value: %v", kv2VaultSecret.Value)
 	}
 }
+
+// test populate secret

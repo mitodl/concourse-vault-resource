@@ -12,14 +12,14 @@ import (
 type AuthEngine string
 
 const (
-	awsIam AuthEngine = "AWS IAM"
-	token  AuthEngine = "TOKEN"
+	awsIam AuthEngine = "aws iam"
+	token  AuthEngine = "token"
 )
 
 // VaultConfig defines vault api interface config
 type VaultConfig struct {
 	Engine       AuthEngine
-	VaultAddr    string
+	Address      string
 	AWSMountPath string
 	Token        string
 	Insecure     bool
@@ -27,24 +27,24 @@ type VaultConfig struct {
 
 // VaultConfig constructor
 func (config *VaultConfig) New() {
-	// validate authentication inputs
+	// validate authentication inputs; TODO: engine now specified by inputs and not constructor logic, so update validation for issues e.g. aws and token co-specification; also validate on missing inputs
 	if len(config.Token) > 0 && len(config.AWSMountPath) > 0 {
 		log.Fatal("Token and AWS authentication were simultaneously selected; these are mutually exclusive options")
 	}
 	if len(config.Token) > 0 && len(config.Token) != 28 {
 		log.Fatal("the specified Vault Token is invalid")
 	}
-	if len(config.Token) == 0 {
+	/*if len(config.Token) == 0 {
 		log.Print("AWS IAM authentication will be utilized with the Vault client")
 		config.Engine = awsIam
 	} else {
 		log.Print("Token authentication will be utilized with the Vault client")
 		config.Engine = token
-	}
+	}*/
 
 	// vault address
-	if len(config.VaultAddr) == 0 {
-		config.VaultAddr = "http://127.0.0.1:8200"
+	if len(config.Address) == 0 {
+		config.Address = "http://127.0.0.1:8200"
 	}
 
 	// aws mount path
@@ -54,9 +54,9 @@ func (config *VaultConfig) New() {
 }
 
 // instantiate authenticated vault client with aws-iam auth
-func (config *VaultConfig) authClient() *vault.Client {
+func (config *VaultConfig) AuthClient() *vault.Client {
 	// initialize config
-	VaultConfig := &vault.Config{Address: config.VaultAddr}
+	VaultConfig := &vault.Config{Address: config.Address}
 	err := VaultConfig.ConfigureTLS(&vault.TLSConfig{Insecure: config.Insecure})
 	if err != nil {
 		log.Print("Vault TLS configuration failed to initialize")
@@ -81,7 +81,6 @@ func (config *VaultConfig) authClient() *vault.Client {
 	}
 
 	// determine authentication method
-	log.Print(config.Engine)
 	switch config.Engine {
 	case token:
 		client.SetToken(config.Token)

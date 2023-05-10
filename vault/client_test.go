@@ -11,19 +11,19 @@ const (
 )
 
 var basicVaultConfig = &VaultConfig{
-	VaultAddr: testVaultAddress,
-	Token:     testVaultToken,
-	Insecure:  true,
+	Address:  testVaultAddress,
+	Token:    testVaultToken,
+	Insecure: true,
 }
 
 // test config constructor
 func TestNewVaultConfig(test *testing.T) {
 	basicVaultConfig.New()
 
-	if basicVaultConfig.Engine != token || basicVaultConfig.VaultAddr != testVaultAddress || basicVaultConfig.AWSMountPath != "aws"  || basicVaultConfig.Token != testVaultToken || !basicVaultConfig.Insecure {
+	if basicVaultConfig.Engine != token || basicVaultConfig.Address != testVaultAddress || basicVaultConfig.AWSMountPath != "aws" || basicVaultConfig.Token != testVaultToken || !basicVaultConfig.Insecure {
 		test.Error("the Vault config constructor returned unexpected values.")
 		test.Errorf("expected Auth Engine: %s, actual: %s", token, basicVaultConfig.Engine)
-		test.Errorf("expected Vault Address: %s, actual: %s", testVaultAddress, basicVaultConfig.VaultAddr)
+		test.Errorf("expected Vault Address: %s, actual: %s", testVaultAddress, basicVaultConfig.Address)
 		test.Errorf("expected AWS Mount Path: aws, actual: %s", basicVaultConfig.AWSMountPath)
 		test.Errorf("expected Vault Token: %s, actual: %s", testVaultToken, basicVaultConfig.Token)
 		test.Errorf("expected Vault Insecure: %t, actual: %t", basicVaultConfig.Insecure, basicVaultConfig.Insecure)
@@ -34,7 +34,7 @@ func TestNewVaultConfig(test *testing.T) {
 
 // test client token authentication
 func TestAuthClient(test *testing.T) {
-  basicVaultClient := basicVaultConfig.authClient()
+	basicVaultClient := basicVaultConfig.AuthClient()
 
 	if basicVaultClient.Token() != testVaultToken {
 		test.Error("the authenticated Vault client return failed basic validation")
