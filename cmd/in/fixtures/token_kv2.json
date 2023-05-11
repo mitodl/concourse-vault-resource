@@ -1,7 +1,9 @@
 {
-  "address": "http://localhost:8200",
-  "auth_engine": "token",
-  "token": "hvs.IZrMVkhZTIYgyArfMEhmLXsP",
+  "source": {
+    "address": "http://localhost:8200",
+    "auth_engine": "token",
+    "token": "hvs.IZrMVkhZTIYgyArfMEhmLXsP"
+  },
   "secrets": {
     "secret": {
       "paths": [

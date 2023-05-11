@@ -20,11 +20,11 @@ var basicVaultConfig = &VaultConfig{
 func TestNewVaultConfig(test *testing.T) {
 	basicVaultConfig.New()
 
-	if basicVaultConfig.Engine != token || basicVaultConfig.Address != testVaultAddress || basicVaultConfig.AWSMountPath != "aws" || basicVaultConfig.Token != testVaultToken || !basicVaultConfig.Insecure {
+	if basicVaultConfig.Engine != token || basicVaultConfig.Address != testVaultAddress || len(basicVaultConfig.AWSMountPath) != 0 || basicVaultConfig.Token != testVaultToken || !basicVaultConfig.Insecure {
 		test.Error("the Vault config constructor returned unexpected values.")
 		test.Errorf("expected Auth Engine: %s, actual: %s", token, basicVaultConfig.Engine)
 		test.Errorf("expected Vault Address: %s, actual: %s", testVaultAddress, basicVaultConfig.Address)
-		test.Errorf("expected AWS Mount Path: aws, actual: %s", basicVaultConfig.AWSMountPath)
+		test.Errorf("expected AWS Mount Path: (empty), actual: %s", basicVaultConfig.AWSMountPath)
 		test.Errorf("expected Vault Token: %s, actual: %s", testVaultToken, basicVaultConfig.Token)
 		test.Errorf("expected Vault Insecure: %t, actual: %t", basicVaultConfig.Insecure, basicVaultConfig.Insecure)
 	}

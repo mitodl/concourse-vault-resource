@@ -22,11 +22,15 @@ type VaultSecret struct {
 	Engine SecretEngine
 	Path   string
 	Mount  string
-	Value  map[string]interface{}
 }
 
-// secret constructor; TODO: validate inputs
+// secret constructor
 func (secret *VaultSecret) New() {
+	// validate mandatory fields specified
+	if len(secret.Engine) == 0 || len(secret.Path) == 0 {
+		log.Fatal("the secret engine and path parameters are mandatory")
+	}
+
 	// determine default mount path if not specified
 	// note current schema renders this pointless, but it would ensure safety to retain
 	if len(secret.Mount) == 0 {
@@ -45,20 +49,21 @@ func (secret *VaultSecret) New() {
 	}
 }
 
-// populate secret type struct with value
-func (secret *VaultSecret) PopulateSecret(client *vault.Client) {
+// populate secret type struct with value TODO: since a different struct besides `VaultSecret` is returned from concourse, then we can return the secret instead of assigning it
+func (secret *VaultSecret) SecretValue(client *vault.Client) map[string]interface{} {
 	switch secret.Engine {
 	case database, aws:
-		secret.generateCredentials(client)
+		return secret.generateCredentials(client)
 	case keyvalue1, keyvalue2:
-		secret.retrieveKVSecret(client)
+		return secret.retrieveKVSecret(client)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
+		return map[string]interface{}{}
 	}
 }
 
-// retrieve and return secrets
-func (secret *VaultSecret) generateCredentials(client *vault.Client) {
+// generate credentials
+func (secret *VaultSecret) generateCredentials(client *vault.Client) map[string]interface{} {
 	// initialize api endpoint for cred generation
 	endpoint := secret.Mount + "/creds/" + secret.Path
 	// GET the secret from the API endpoint
@@ -68,11 +73,12 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) {
 		log.Fatal(err)
 	}
 
-	// assign secret value and implicitly coerce type to map[string]interface{}
-	secret.Value = response.Data
+	// return secret value and implicitly coerce type to map[string]interface{}
+	return response.Data
 }
 
-func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) {
+// retrieve key-value pair secrets
+func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) map[string]interface{} {
 	// declare func scope variable
 	var kvSecret *vault.KVSecret
 	var err error
@@ -100,6 +106,6 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) {
 		log.Fatal(err)
 	}
 
-	// assign secret value and implicitly coerce type to map[string]interface{}
-	secret.Value = kvSecret.Data
+	// return secret value and implicitly coerce type to map[string]interface{}
+	return kvSecret.Data
 }

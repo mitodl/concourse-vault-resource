@@ -12,7 +12,7 @@ import (
 type AuthEngine string
 
 const (
-	awsIam AuthEngine = "aws iam"
+	awsIam AuthEngine = "aws"
 	token  AuthEngine = "token"
 )
 
@@ -27,28 +27,31 @@ type VaultConfig struct {
 
 // VaultConfig constructor
 func (config *VaultConfig) New() {
-	// validate authentication inputs; TODO: engine now specified by inputs and not constructor logic, so update validation for issues e.g. aws and token co-specification; also validate on missing inputs
-	if len(config.Token) > 0 && len(config.AWSMountPath) > 0 {
-		log.Fatal("Token and AWS authentication were simultaneously selected; these are mutually exclusive options")
-	}
-	if len(config.Token) > 0 && len(config.Token) != 28 {
-		log.Fatal("the specified Vault Token is invalid")
-	}
-	/*if len(config.Token) == 0 {
-		log.Print("AWS IAM authentication will be utilized with the Vault client")
-		config.Engine = awsIam
-	} else {
-		log.Print("Token authentication will be utilized with the Vault client")
-		config.Engine = token
-	}*/
-
 	// vault address
 	if len(config.Address) == 0 {
 		config.Address = "http://127.0.0.1:8200"
 	}
 
-	// aws mount path
-	if len(config.AWSMountPath) == 0 {
+	// determine engine if unspecified and validate authentication parameters
+	if len(config.Engine) == 0 {
+		log.Print("Authentication engine for Vault not specified; using logic from other parameters to assist with determination")
+
+		if len(config.Token) > 0 && len(config.AWSMountPath) > 0 {
+			log.Fatal("Token and AWS mount path were simultaneously specified; these are mutually exclusive options")
+		}
+		if len(config.Token) == 0 {
+			log.Print("AWS IAM authentication will be utilized with the Vault client")
+			config.Engine = awsIam
+		} else {
+			log.Print("Token authentication will be utilized with the Vault client")
+			config.Engine = token
+		}
+	}
+	if config.Engine == token && len(config.Token) != 28 {
+		log.Fatal("the specified Vault Token is invalid")
+	}
+	if config.Engine == awsIam && len(config.AWSMountPath) == 0 {
+		log.Print("using default AWS authentication mount path at 'aws'")
 		config.AWSMountPath = "aws"
 	}
 }

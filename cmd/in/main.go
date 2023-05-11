@@ -14,17 +14,25 @@ func main() {
 	// read, decode, unmarshal, and store the json stdin in the inRequest pointer
 	var inRequest concourse.InRequest
 
+  //TODO: will almost certainly need to deduce concourse stdin
+	/*var buf bytes.Buffer
+  io.Copy(&buf, os.Stdin)
+  log.Print(string(buf.Bytes()))*/
+
 	if err := json.NewDecoder(os.Stdin).Decode(&inRequest); err != nil {
 		log.Print("error decoding stdin from JSON")
 		log.Fatal(err)
 	}
 
 	// initialize response storing secret values
-	inResponse := concourse.InResponse{Version: concourse.Version{Version: 1}}
+	inResponse := concourse.InResponse{
+		Version:  inRequest.Version,
+		Metadata: concourse.Metadata{Values: map[string]map[string]interface{}{}},
+	}
 
 	// initialize vault config and client
 	vaultConfig := &vault.VaultConfig{
-		Engine:       vault.AuthEngine(inRequest.Source.Engine),
+		Engine:       vault.AuthEngine(inRequest.Source.AuthEngine),
 		Address:      inRequest.Source.Address,
 		AWSMountPath: inRequest.Source.AWSMountPath,
 		Token:        inRequest.Source.Token,
@@ -34,27 +42,27 @@ func main() {
 	vaultClient := vaultConfig.AuthClient()
 
 	// perform secrets operations
-	for mount, secretParams := range inRequest.Source.Secrets {
-		// validate parameters
+	for mount, secretParams := range inRequest.Secrets {
+		// validate parameters with generic and/or custom types
 		engineAny, ok := secretParams["engine"]
 		if !ok {
-			log.Fatalf("The secret engine was not specified for mount: %s", mount)
+			log.Fatalf("the secret engine was not specified for mount: %s", mount)
 		}
 		engineString, ok := engineAny.(string)
 		if !ok {
-			log.Fatalf("The secret engine must be a string: %v", engineAny)
+			log.Fatalf("the secret engine must be a string: %v, but was instead a type: %T", engineAny, engineAny)
 		}
 		engine := vault.SecretEngine(engineString)
 		if len(engine) == 0 {
-			log.Fatalf("An invalid secrets engine was specified: %s", engineString)
+			log.Fatalf("an invalid secrets engine was specified: %s", engineString)
 		}
 		pathsAny, ok := secretParams["paths"]
 		if !ok {
-			log.Fatalf("The paths were not specified for mount: %s", mount)
+			log.Fatalf("the paths were not specified for mount: %s", mount)
 		}
-		paths, ok := pathsAny.([]string)
+		pathsSlice, ok := pathsAny.([]any)
 		if !ok {
-			log.Fatalf("The secret paths must be a list of strings: %v", pathsAny)
+			log.Fatalf("the secret paths must be a list of strings: %v, but was instead a type: %T", pathsAny, pathsAny)
 		}
 		// initialize vault secret
 		secret := &vault.VaultSecret{
@@ -62,14 +70,16 @@ func main() {
 			Engine: engine,
 		}
 		// iterate through secret paths
-		for _, path := range paths {
-			// assign path to secret member and then invoke constructor
-			secret.Path = path
+		for _, pathAny := range pathsSlice {
+			// validate path parameter can be converted to a string and assign to secret member
+			secret.Path, ok = pathAny.(string)
+			if !ok {
+				log.Fatalf("the secret path must be a string: %v, but was instead a type: %T", pathAny, pathAny)
+			}
+			// invoke secret constructor
 			secret.New()
-			// populate the secret value
-			secret.PopulateSecret(vaultClient)
-			// assign to the response struct as key "<mount>-<path>" and value as secret keys and values
-			inResponse.Metadata.Values[mount+"-"+path] = secret.Value
+			// return the secret value and assign to the response struct as key "<mount>-<path>" and value as secret keys and values
+			inResponse.Metadata.Values[mount+"-"+secret.Path] = secret.SecretValue(vaultClient)
 		}
 	}
 

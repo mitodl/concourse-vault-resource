@@ -2,18 +2,11 @@ package concourse
 
 // concourse standard custom type structs
 type Source struct {
-	// key is secret mount, and nested map is path-[<path>] and engine-<engine>
-	// maybe concourse and go would be fine with a slice of custom type structs here, but not interested in fighting that battle
-	Secrets      map[string]map[string]any `json:"secrets"`
-	Engine       string                    `json:"auth_engine"`
-	Address      string                    `json:"address"`
-	AWSMountPath string                    `json:"aws_mount_path"`
-	Token        string                    `json:"token"`
-	Insecure     bool                      `json:"insecure"`
-}
-
-type Version struct {
-	Version int `json:"version"`
+	AuthEngine   string `json:"auth_engine,omitempty"`
+	Address      string `json:"address,omitempty"`
+	AWSMountPath string `json:"aws_mount_path,omitempty"`
+	Token        string `json:"token,omitempty"`
+	Insecure     bool   `json:"insecure"`
 }
 
 type Metadata struct {
@@ -22,13 +15,16 @@ type Metadata struct {
 	Values map[string]map[string]interface{} `json:"values"`
 }
 
-// in custom type struct for inputs and outputs
+// in custom type struct for inputs and outputs TODO: concourse may be passing `params` value merged with value of `source` and retain `source` as key for post-merge according to comcast resource, but that sounds ridiculous
 type InRequest struct {
-	Source  Source  `json:"source"`
-	Version Version `json:"version"`
+	// key is secret mount, and nested map is paths-[<path>, <path>] and engine-<engine>
+	// cannot use nested structs because mount keys are arbitrary
+	Secrets map[string]map[string]any `json:"secrets"`
+	Source  Source                    `json:"source"`
+	Version int                       `json:"version"`
 }
 
 type InResponse struct {
 	Metadata Metadata `json:"metadata"`
-	Version  Version  `json:"version"`
+	Version  int      `json:"version"`
 }
