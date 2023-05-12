@@ -1,6 +1,10 @@
-FROM golang:1.18-alpine
+FROM golang:1.18-alpine as build
+WORKDIR /go/src/github.com/mitodl/concourse-vault-plugin
+COPY . .
+RUN apk add make && make release
+
+FROM alpine:3.17
 WORKDIR /opt/resource
-COPY go.* /opt/resource
-COPY cmd /opt/resource/
-COPY pkg /opt/resource/
-RUN go mod tidy && rm go.* && rm /opt/resource/cmd/in/main_test.go && rm -r /opt/resource/cmd/in/fixtures
+COPY --from=build /go/src/github.com/mitodl/concourse-vault-plugin/check .
+COPY --from=build /go/src/github.com/mitodl/concourse-vault-plugin/in .
+COPY --from=build /go/src/github.com/mitodl/concourse-vault-plugin/out .

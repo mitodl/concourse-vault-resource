@@ -14,10 +14,10 @@ func main() {
 	// read, decode, unmarshal, and store the json stdin in the inRequest pointer
 	var inRequest concourse.InRequest
 
-  //TODO: will almost certainly need to deduce concourse stdin
+	//TODO: will almost certainly need to deduce concourse stdin
 	/*var buf bytes.Buffer
-  io.Copy(&buf, os.Stdin)
-  log.Print(string(buf.Bytes()))*/
+	  io.Copy(&buf, os.Stdin)
+	  log.Print(string(buf.Bytes()))*/
 
 	if err := json.NewDecoder(os.Stdin).Decode(&inRequest); err != nil {
 		log.Print("error decoding stdin from JSON")
@@ -83,7 +83,7 @@ func main() {
 		}
 	}
 
-	// format inResponse into json
+	// format inResponse into json TODO: verify how this is behaving in concourse and how it can be captured for later use
 	if err := json.NewEncoder(os.Stdout).Encode(inResponse); err != nil {
 		log.Fatal("unable to format secret values into JSON")
 	}

@@ -6,11 +6,18 @@ fmt:
 tidy:
 	@go mod tidy
 
+get:
+	@go get github.com/mitodl/concourse-vault-resource
+
 build: tidy
-	@go build -o foo
+	@go build -o check cmd/check/main.go
+	@go build -o in cmd/in/main.go
+	@go build -o out cmd/out/main.go
 
 release: tidy
-	@go build -s -w -o foo
+	@go build -o check -ldflags="-s -w"  cmd/check/main.go
+	@go build -o in -ldflags="-s -w"  cmd/in/main.go
+	@go build -o out -ldflags="-s -w"  cmd/out/main.go
 
 unit:
 	@go test -v ./...
