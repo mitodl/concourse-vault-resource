@@ -1,0 +1,37 @@
+resource_types:
+- name: vault
+  type: docker-image
+  source:
+    repository: mitodl/concourse-vault-resource
+    tag: latest
+
+resources:
+- name: vault
+  type: vault
+  source:
+    address: https://mitodl.vault.com:8200
+    auth_engine: aws
+
+jobs:
+- name: do something
+  plan:
+  - get: my-code
+  - get: vault
+    params:
+      secrets:
+        postres-mitxonline:
+          paths:
+          - readonly
+          engine: database
+        aws:
+          paths:
+          - myrole
+          engine: aws
+        kv:
+          paths:
+          - path/to/secret
+          engine: kv1
+        secret:
+          paths:
+          - path/to/secret
+          engine: kv2

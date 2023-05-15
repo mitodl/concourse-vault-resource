@@ -15,7 +15,7 @@ type Metadata struct {
 	Values map[string]map[string]interface{} `json:"values"`
 }
 
-// in custom type struct for inputs and outputs TODO: concourse may be passing `params` value merged with value of `source` and retain `source` as key for post-merge according to comcast resource, but that sounds ridiculous
+// in custom type struct for inputs and outputs TODO: concourse may be passing `params` value merged with value of `source` and retain `source` as key for post-merge according to comcast resource, but that sounds ridiculous; if params key is being passed then restructure so redundant `secrets` key is removed
 type InRequest struct {
 	// key is secret mount, and nested map is paths-[<path>, <path>] and engine-<engine>
 	// cannot use nested structs because mount keys are arbitrary

@@ -21,8 +21,6 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 ### `in`: interacts with the supported Vault secrets engines
 
-### `out`: not implemented
-
 **parameters**
 
 - `secrets`: _required_ A map/hash/dictionary of the following YAML schema for specifying the secrets to retrieve and/or generate.
@@ -34,6 +32,8 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
   - <path/to/other_secret>
   engine: <secret engine> # supported values: database, aws, kv1, kv2
 ```
+
+### `out`: not implemented
 
 ## Example
 
@@ -56,7 +56,7 @@ jobs:
 - name: do something
   plan:
   - get: my-code
-  - put: vault
+  - get: vault
     params:
       secrets:
         postres-mitxonline:

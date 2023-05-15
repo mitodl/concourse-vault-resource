@@ -19,15 +19,13 @@ release: tidy
 	@go build -o in -ldflags="-s -w"  cmd/in/main.go
 	@go build -o out -ldflags="-s -w"  cmd/out/main.go
 
+bootstrap:
+	# using cli for this avoids importing the entire vault/command package
+	@nohup vault server -dev -dev-root-token-id="abcdefghijklmnopqrstuvwxyz09" &
+	@go test -v -run TestBootstrap ./vault
+
+shutdown:
+	@killall vault
+
 unit:
 	@go test -v ./...
-
-#TODO: use api module
-bootstrap:
-	#@vault server -dev
-	@vault auth enable aws
-	@vault secrets enable database
-	@vault secrets enable aws
-	@vault secrets enable -version=1 kv
-	@vault kv put -mount=kv foo/bar password=supersecret
-	@vault kv put -mount=secret foo/bar password=supersecret

@@ -2,12 +2,15 @@ package vault
 
 import (
 	"testing"
+	"context"
+
+	vault "github.com/hashicorp/vault/api"
 )
 
 // global test helpers
 const (
 	testVaultAddress = "http://127.0.0.1:8200"
-	testVaultToken   = "hvs.IZrMVkhZTIYgyArfMEhmLXsP"
+	testVaultToken   = "abcdefghijklmnopqrstuvwxyz09"
 )
 
 var basicVaultConfig = &VaultConfig{
@@ -40,4 +43,36 @@ func TestAuthClient(test *testing.T) {
 		test.Error("the authenticated Vault client return failed basic validation")
 		test.Errorf("expected Vault token: %s, actual: %s", testVaultToken, basicVaultClient.Token())
 	}
+}
+
+// bootstrap vault server for testing
+func TestBootstrap(test *testing.T) {
+  // check if we should skip bootstrap
+  if true {
+		test.Skip("skipping vault server bootstrap")
+	}
+
+  // instantiate client for bootstrapping
+	basicVaultConfig.New()
+	client := basicVaultConfig.AuthClient()
+
+  // enable auth: aws
+	client.Sys().EnableAuthWithOptions("auth/aws", &vault.EnableAuthOptions{Type: "aws"})
+  // enable secrets: database, aws, kv1 (kv2 enabled by default with dev server)
+	client.Sys().Mount("aws/", &vault.MountInput{Type: "aws"})
+	client.Sys().Mount("database/", &vault.MountInput{Type: "database"})
+	client.Sys().Mount("kv/", &vault.MountInput{Type: "kv"})
+	// modify new kv secrets engine to be version 1
+	client.Sys().TuneMount("kv/", vault.MountConfigInput{PluginVersion: "1"})
+	// put kv1 and kv2 secrets
+	client.KVv1("kv").Put(
+		context.Background(),
+		KVPath,
+		map[string]interface{}{KVKey: KVValue},
+	)
+	client.KVv2("secret").Put(
+		context.Background(),
+		KVPath,
+		map[string]interface{}{KVKey: KVValue},
+	)
 }
