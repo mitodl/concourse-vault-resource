@@ -1,8 +1,8 @@
 package vault
 
 import (
-	"testing"
 	"context"
+	"testing"
 
 	vault "github.com/hashicorp/vault/api"
 )
@@ -47,18 +47,18 @@ func TestAuthClient(test *testing.T) {
 
 // bootstrap vault server for testing
 func TestBootstrap(test *testing.T) {
-  // check if we should skip bootstrap
-  if true {
+	// check if we should skip bootstrap TODO add conditional
+	if true {
 		test.Skip("skipping vault server bootstrap")
 	}
 
-  // instantiate client for bootstrapping
+	// instantiate client for bootstrapping
 	basicVaultConfig.New()
 	client := basicVaultConfig.AuthClient()
 
-  // enable auth: aws
+	// enable auth: aws
 	client.Sys().EnableAuthWithOptions("auth/aws", &vault.EnableAuthOptions{Type: "aws"})
-  // enable secrets: database, aws, kv1 (kv2 enabled by default with dev server)
+	// enable secrets: database, aws, kv1 (kv2 enabled by default with dev server)
 	client.Sys().Mount("aws/", &vault.MountInput{Type: "aws"})
 	client.Sys().Mount("database/", &vault.MountInput{Type: "database"})
 	client.Sys().Mount("kv/", &vault.MountInput{Type: "kv"})

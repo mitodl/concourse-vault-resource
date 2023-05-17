@@ -1,5 +1,11 @@
 package concourse
 
+import (
+	"encoding/json"
+	"io"
+	"log"
+)
+
 // concourse standard custom type structs
 type Source struct {
 	AuthEngine   string `json:"auth_engine,omitempty"`
@@ -16,15 +22,37 @@ type Metadata struct {
 }
 
 // in custom type struct for inputs and outputs TODO: concourse may be passing `params` value merged with value of `source` and retain `source` as key for post-merge according to comcast resource, but that sounds ridiculous; if params key is being passed then restructure so redundant `secrets` key is removed
-type InRequest struct {
+type inRequest struct {
 	// key is secret mount, and nested map is paths-[<path>, <path>] and engine-<engine>
 	// cannot use nested structs because mount keys are arbitrary
-	Secrets map[string]map[string]any `json:"secrets"`
+	Params  map[string]map[string]any `json:"params"`
 	Source  Source                    `json:"source"`
 	Version int                       `json:"version"`
 }
 
-type InResponse struct {
+type inResponse struct {
 	Metadata Metadata `json:"metadata"`
 	Version  int      `json:"version"`
+}
+
+// inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
+func NewInRequest(pipelineJSON io.Reader) *inRequest {
+	// read, decode, and unmarshal the pipeline json io.Reader, and assign to the inRequest pointer
+	var inRequest inRequest
+	if err := json.NewDecoder(pipelineJSON).Decode(&inRequest); err != nil {
+		log.Print("error decoding stdin from JSON")
+		log.Fatal(err)
+	}
+
+  // return reference
+	return &inRequest
+}
+
+// inResponse constructor
+func NewInResponse(version int) *inResponse {
+	// return reference to initialized struct
+	return &inResponse{
+		Version:  version,
+		Metadata: Metadata{Values: map[string]map[string]interface{}{}},
+	}
 }

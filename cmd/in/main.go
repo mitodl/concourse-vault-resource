@@ -11,24 +11,11 @@ import (
 
 // GET and primary
 func main() {
-	// read, decode, unmarshal, and store the json stdin in the inRequest pointer
-	var inRequest concourse.InRequest
-
-	//TODO: will almost certainly need to deduce concourse stdin
-	/*var buf bytes.Buffer
-	  io.Copy(&buf, os.Stdin)
-	  log.Print(string(buf.Bytes()))*/
-
-	if err := json.NewDecoder(os.Stdin).Decode(&inRequest); err != nil {
-		log.Print("error decoding stdin from JSON")
-		log.Fatal(err)
-	}
+	// initialize request from concourse pipeline
+	inRequest := concourse.NewInRequest(os.Stdin)
 
 	// initialize response storing secret values
-	inResponse := concourse.InResponse{
-		Version:  inRequest.Version,
-		Metadata: concourse.Metadata{Values: map[string]map[string]interface{}{}},
-	}
+	inResponse := concourse.NewInResponse(inRequest.Version)
 
 	// initialize vault config and client
 	vaultConfig := &vault.VaultConfig{
@@ -42,7 +29,7 @@ func main() {
 	vaultClient := vaultConfig.AuthClient()
 
 	// perform secrets operations
-	for mount, secretParams := range inRequest.Secrets {
+	for mount, secretParams := range inRequest.Params {
 		// validate parameters with generic and/or custom types
 		engineAny, ok := secretParams["engine"]
 		if !ok {

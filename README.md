@@ -23,10 +23,10 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 **parameters**
 
-- `secrets`: _required_ A map/hash/dictionary of the following YAML schema for specifying the secrets to retrieve and/or generate.
+- `<secret_mount path>`: _required_ One or more map/hash/dictionary of the following YAML schema for specifying the secrets to retrieve and/or generate.
 
 ```yaml
-<secret_mount>:
+<secret_mount_path>:
   paths:
   - <path/to/secret>
   - <path/to/other_secret>
@@ -58,13 +58,16 @@ jobs:
   - get: my-code
   - get: vault
     params:
-      secrets:
-        postres-mitxonline:
-          paths:
-          - readonly
-          engine: database
-        secret:
-          paths:
-          - path/to/secret
-          engine: kv2
+      postres-mitxonline:
+        paths:
+        - readonly
+        engine: database
+      secret:
+        paths:
+        - path/to/secret
+        engine: kv2
+      kv:
+        paths:
+        - path/to/secret
+        engine: kv1
 ```
