@@ -21,18 +21,32 @@ type Metadata struct {
 	Values map[string]map[string]interface{} `json:"values"`
 }
 
-// in custom type struct for inputs and outputs TODO: concourse may be passing `params` value merged with value of `source` and retain `source` as key for post-merge according to comcast resource, but that sounds ridiculous; if params key is being passed then restructure so redundant `secrets` key is removed
+type Version struct {
+	Version int `json:"version"`
+}
+
+// custom type structs
+type Secrets struct {
+	Engine string   `json:"engine"`
+	Paths  []string `json:"paths"`
+}
+
+// check/in custom type struct for inputs and outputs
+type CheckResponse struct {
+	Versions []Version
+}
+
 type inRequest struct {
 	// key is secret mount, and nested map is paths-[<path>, <path>] and engine-<engine>
 	// cannot use nested structs because mount keys are arbitrary
-	Params  map[string]map[string]any `json:"params"`
-	Source  Source                    `json:"source"`
-	Version int                       `json:"version"`
+	Params  map[string]Secrets `json:"params"`
+	Source  Source             `json:"source"`
+	Version Version            `json:"version"`
 }
 
 type inResponse struct {
 	Metadata Metadata `json:"metadata"`
-	Version  int      `json:"version"`
+	Version  Version  `json:"version"`
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
@@ -44,12 +58,12 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 		log.Fatal(err)
 	}
 
-  // return reference
+	// return reference
 	return &inRequest
 }
 
 // inResponse constructor
-func NewInResponse(version int) *inResponse {
+func NewInResponse(version Version) *inResponse {
 	// return reference to initialized struct
 	return &inResponse{
 		Version:  version,
