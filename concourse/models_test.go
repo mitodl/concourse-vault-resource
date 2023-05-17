@@ -9,12 +9,12 @@ func TestNewInRequest(test *testing.T) {
 
 // test inResponse constructor
 func TestNewInResponse(test *testing.T) {
-	version := Version{Version: 2}
+	version := Version{Version: "2"}
 	inResponse := NewInResponse(version)
 
 	if len(inResponse.Metadata.Values) != 0 || inResponse.Version != version {
 		test.Error("the in response constructor returned unexpected values")
 		test.Errorf("expected Metadata Values field to be empty map, actual: %v", inResponse.Metadata)
-		test.Errorf("expected Version: %d, actual: %d", version, inResponse.Version)
+		test.Errorf("expected Version: %s, actual: %s", version, inResponse.Version)
 	}
 }

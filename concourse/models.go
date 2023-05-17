@@ -22,7 +22,7 @@ type Metadata struct {
 }
 
 type Version struct {
-	Version int `json:"version"`
+	Version string `json:"version"`
 }
 
 // custom type structs
