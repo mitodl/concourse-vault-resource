@@ -10,6 +10,12 @@
         "foo/bar"
       ],
       "engine": "kv2"
+    },
+    "kv": {
+      "paths": [
+        "foo/bar"
+      ],
+      "engine": "kv1"
     }
   }
 }

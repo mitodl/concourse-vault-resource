@@ -21,6 +21,7 @@ type VaultConfig struct {
 	Engine       AuthEngine
 	Address      string
 	AWSMountPath string
+	AWSIamRole   string
 	Token        string
 	Insecure     bool
 }
@@ -53,6 +54,9 @@ func (config *VaultConfig) New() {
 	if config.Engine == awsIam && len(config.AWSMountPath) == 0 {
 		log.Print("using default AWS authentication mount path at 'aws'")
 		config.AWSMountPath = "aws"
+	}
+	if config.Engine == awsIam && len(config.AWSIamRole) == 0 {
+		log.Print("using default AWS IAM role")
 	}
 }
 
@@ -88,15 +92,25 @@ func (config *VaultConfig) AuthClient() *vault.Client {
 	case token:
 		client.SetToken(config.Token)
 	case awsIam:
+		// determine iam role login option
+		var loginOption auth.LoginOption
+
+		if len(config.AWSIamRole) > 0 {
+			// use explicitly specified iam role
+			loginOption = auth.WithRole(config.AWSIamRole)
+		} else {
+			// use default iam role
+			loginOption = auth.WithIAMAuth()
+		}
 		// authenticate with aws iam
-		awsAuth, err := auth.NewAWSAuth(auth.WithIAMAuth())
+		awsAuth, err := auth.NewAWSAuth(loginOption)
 		if err != nil {
 			log.Fatal("unable to initialize AWS IAM authentication")
 		}
 
 		authInfo, err := client.Auth().Login(context.Background(), awsAuth)
 		if err != nil {
-			log.Print("unable to login to AWS IAM auth method")
+			log.Print("unable to login with AWS IAM auth method")
 			log.Fatal(err)
 		}
 		if authInfo == nil {

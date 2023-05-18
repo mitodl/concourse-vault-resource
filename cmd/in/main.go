@@ -22,6 +22,7 @@ func main() {
 		Engine:       vault.AuthEngine(inRequest.Source.AuthEngine),
 		Address:      inRequest.Source.Address,
 		AWSMountPath: inRequest.Source.AWSMountPath,
+		AWSIamRole:   inRequest.Source.AWSIamRole,
 		Token:        inRequest.Source.Token,
 		Insecure:     inRequest.Source.Insecure,
 	}

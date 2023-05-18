@@ -11,7 +11,9 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 - `address`: _optional_ The address for the Vault server in format of `URL:PORT`. default: `http://127.0.0.1:8200`
 
-- `aws_mount_path`: _optional_ The mount path for the AWS authentication engine. default: `aws`
+- `aws_mount_path`: _optional_ The mount path for the AWS authentication engine. Parameter is ignored if authentication engine is not `aws`. default: `aws`
+
+- `aws_iam_role`: _optional_ The AWS IAM Role for the AWS authentication login to Vault. Parameter is ignored if authentication engine is not `aws`. default: (default IAM Role according to utilized AWS config)
 
 - `token`: _optional_ The token for the token authentication engine. Required if `auth_engine` parameter is `token`.
 

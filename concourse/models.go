@@ -11,6 +11,7 @@ type Source struct {
 	AuthEngine   string `json:"auth_engine,omitempty"`
 	Address      string `json:"address,omitempty"`
 	AWSMountPath string `json:"aws_mount_path,omitempty"`
+	AWSIamRole   string `json:"aws_iam_role,omitempty"`
 	Token        string `json:"token,omitempty"`
 	Insecure     bool   `json:"insecure"`
 }
