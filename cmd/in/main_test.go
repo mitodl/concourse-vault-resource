@@ -2,17 +2,15 @@ package main
 
 import (
 	"os"
-	"testing"
+	_ "testing"
 )
 
-func TestE2ERetrieveKVSecrets(test *testing.T) {
+func ExampleMain() {
 	// deliver test pipeline file content as stdin to "in" the same as actual pipeline execution
 	os.Stdin, _ = os.OpenFile("fixtures/token_kv.json", os.O_RDONLY, 0o644)
 	defer os.Stdin.Close()
 
-	// invoke main
+	// invoke main and validate stdout
 	main()
-
-	// test stdout TODO: decode from json to map and test entries
-	// var stdout bytes.Buffer
+  // Output: {"metadata":{"values":{"kv-foo/bar":{"password":"supersecret"},"secret-foo/bar":{"password":"supersecret"}}},"version":{"version":""}}
 }

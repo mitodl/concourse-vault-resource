@@ -13,7 +13,7 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 - `aws_mount_path`: _optional_ The mount path for the AWS authentication engine. Parameter is ignored if authentication engine is not `aws`. default: `aws`
 
-- `aws_iam_role`: _optional_ The AWS IAM Role for the AWS authentication login to Vault. Parameter is ignored if authentication engine is not `aws`. default: (default IAM Role according to utilized AWS config)
+- `aws_vault_role`: _optional_ The Vault role for the AWS authentication login to Vault. Parameter is ignored if authentication engine is not `aws`. default: (default AWS IAM Role according to utilized AWS config with IAM authentication)
 
 - `token`: _optional_ The token for the token authentication engine. Required if `auth_engine` parameter is `token`.
 

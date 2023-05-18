@@ -21,7 +21,7 @@ type VaultConfig struct {
 	Engine       AuthEngine
 	Address      string
 	AWSMountPath string
-	AWSIamRole   string
+	AWSRole      string
 	Token        string
 	Insecure     bool
 }
@@ -55,7 +55,7 @@ func (config *VaultConfig) New() {
 		log.Print("using default AWS authentication mount path at 'aws'")
 		config.AWSMountPath = "aws"
 	}
-	if config.Engine == awsIam && len(config.AWSIamRole) == 0 {
+	if config.Engine == awsIam && len(config.AWSRole) == 0 {
 		log.Print("using default AWS IAM role")
 	}
 }
@@ -95,9 +95,9 @@ func (config *VaultConfig) AuthClient() *vault.Client {
 		// determine iam role login option
 		var loginOption auth.LoginOption
 
-		if len(config.AWSIamRole) > 0 {
+		if len(config.AWSRole) > 0 {
 			// use explicitly specified iam role
-			loginOption = auth.WithRole(config.AWSIamRole)
+			loginOption = auth.WithRole(config.AWSRole)
 		} else {
 			// use default iam role
 			loginOption = auth.WithIAMAuth()

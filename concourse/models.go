@@ -11,7 +11,7 @@ type Source struct {
 	AuthEngine   string `json:"auth_engine,omitempty"`
 	Address      string `json:"address,omitempty"`
 	AWSMountPath string `json:"aws_mount_path,omitempty"`
-	AWSIamRole   string `json:"aws_iam_role,omitempty"`
+	AWSVaultRole string `json:"aws_vault_role,omitempty"`
 	Token        string `json:"token,omitempty"`
 	Insecure     bool   `json:"insecure"`
 }
@@ -55,7 +55,7 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 	// read, decode, and unmarshal the pipeline json io.Reader, and assign to the inRequest pointer
 	var inRequest inRequest
 	if err := json.NewDecoder(pipelineJSON).Decode(&inRequest); err != nil {
-		log.Print("error decoding stdin from JSON")
+		log.Print("error decoding pipline input from JSON")
 		log.Fatal(err)
 	}
 

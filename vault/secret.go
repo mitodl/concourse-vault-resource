@@ -49,7 +49,7 @@ func (secret *VaultSecret) New() {
 	}
 }
 
-// populate secret type struct with value TODO: since a different struct besides `VaultSecret` is returned from concourse, then we can return the secret instead of assigning it
+// populate secret type struct with value
 func (secret *VaultSecret) SecretValue(client *vault.Client) map[string]interface{} {
 	switch secret.Engine {
 	case database, aws:
