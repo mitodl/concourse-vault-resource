@@ -13,8 +13,21 @@ type Secrets struct {
 }
 
 // key is secret "<mount>-<path>", and value is secret keys and values
-// key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators TODO: if type struct updated in secret for kv versus cred then take advantage of that here
+// key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
 type SecretValue map[string]interface{}
+
+// TODO: for future fine-tuning of secret value (enum?)
+type DBSecretValue struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+type KVSecretValue map[string]interface{}
+type AWSSecretValue struct {
+	AccessKey     string `json:"access_key"`
+	SecretKey     string `json:"secret_key"`
+	SecurityToken string `json:"security_token,omitempty"`
+	ARN           string `json:"arn"`
+}
 
 // concourse standard custom type structs
 type Source struct {

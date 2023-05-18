@@ -11,7 +11,7 @@ import (
 // no PUT/POST associated with this custom resource
 func main() {
 	// initialize checkResponse
-  checkResponse := concourse.CheckResponse([]concourse.Version{{Version: "1"}})
+	checkResponse := concourse.CheckResponse([]concourse.Version{{Version: "1"}})
 
 	if err := json.NewEncoder(os.Stdout).Encode(checkResponse); err != nil {
 		log.Fatal("unable to umarshal check response struct to JSON")

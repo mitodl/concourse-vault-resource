@@ -28,6 +28,8 @@ func main() {
 	}
 	vaultConfig.New()
 	vaultClient := vaultConfig.AuthClient()
+	// declare err specifically to track any SecretValue failure and trigger only after all secret operations
+	var err error
 
 	// perform secrets operations
 	for mount, secretParams := range inRequest.Params {
@@ -47,15 +49,20 @@ func main() {
 			// invoke secret constructor
 			secret.New()
 			// return and assign the secret values for the given path
-			secretValues := concourse.SecretValue{}
-			secretValues[mount+"-"+secret.Path] = secret.SecretValue(vaultClient)
+			secretValue := concourse.SecretValue{}
+			secretValue[mount+"-"+secret.Path], err = secret.SecretValue(vaultClient)
 			// append to the response struct metadata values as key "<mount>-<path>" and value as secret keys and values
-			inResponse.Metadata = append(inResponse.Metadata, secretValues)
+			inResponse.Metadata = append(inResponse.Metadata, secretValue)
 		}
 	}
 
+	// fatally exit if any secret Read operation failed
+	if err != nil {
+		log.Fatal("one or more attempted secret Read operations failed")
+	}
+
 	// format inResponse into json TODO: verify how this is behaving in concourse and how it can be captured for later use
-	if err := json.NewEncoder(os.Stdout).Encode(inResponse); err != nil {
+	if err = json.NewEncoder(os.Stdout).Encode(inResponse); err != nil {
 		log.Fatal("unable to unmarshal in response struct to JSON")
 	}
 }

@@ -51,8 +51,12 @@ func TestRetrieveKVSecret(test *testing.T) {
 		Path:   KVPath,
 	}
 	kv1VaultSecret.New()
-	kv1Value := kv1VaultSecret.retrieveKVSecret(basicVaultClient)
+	kv1Value, err := kv1VaultSecret.retrieveKVSecret(basicVaultClient)
 
+	if err != nil {
+		test.Error("kv1 secret retrieval failed")
+		test.Error(err)
+	}
 	if kv1Value[KVKey] != KVValue {
 		test.Error("the retrieved kv1 secret value was incorrect")
 		test.Errorf("secret map value: %v", kv1Value)
@@ -64,8 +68,12 @@ func TestRetrieveKVSecret(test *testing.T) {
 		Mount:  "secret",
 	}
 	kv2VaultSecret.New()
-	kv2Value := kv2VaultSecret.retrieveKVSecret(basicVaultClient)
+	kv2Value, err := kv2VaultSecret.retrieveKVSecret(basicVaultClient)
 
+	if err != nil {
+		test.Error("kv2 secret retrieval failed")
+		test.Error(err)
+	}
 	if kv2Value[KVKey] != KVValue {
 		test.Error("the retrieved kv2 secret value was incorrect")
 		test.Errorf("secret map value: %v", kv2Value)

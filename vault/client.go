@@ -56,7 +56,7 @@ func (config *VaultConfig) New() {
 		config.AWSMountPath = "aws"
 	}
 	if config.Engine == awsIam && len(config.AWSRole) == 0 {
-		log.Print("using default AWS IAM role")
+		log.Print("using Vault role in utilized AWS authentication engine with the same name as the current utilized AWS IAM Role")
 	}
 }
 
@@ -84,7 +84,7 @@ func (config *VaultConfig) AuthClient() *vault.Client {
 		log.Fatal(err)
 	}
 	if sealStatus.Sealed {
-		log.Fatal("the Vault cluster is sealed and no operations can be executed")
+		log.Fatal("the Vault server cluster is sealed and no operations can be executed")
 	}
 
 	// determine authentication method

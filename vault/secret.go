@@ -50,7 +50,7 @@ func (secret *VaultSecret) New() {
 }
 
 // populate secret type struct with value
-func (secret *VaultSecret) SecretValue(client *vault.Client) map[string]interface{} {
+func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, error) {
 	switch secret.Engine {
 	case database, aws:
 		return secret.generateCredentials(client)
@@ -58,27 +58,29 @@ func (secret *VaultSecret) SecretValue(client *vault.Client) map[string]interfac
 		return secret.retrieveKVSecret(client)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
-		return map[string]interface{}{}
+		return map[string]interface{}{}, nil // unreachable, but compile error otherwise
 	}
 }
 
 // generate credentials
-func (secret *VaultSecret) generateCredentials(client *vault.Client) map[string]interface{} {
+func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, error) {
 	// initialize api endpoint for cred generation
 	endpoint := secret.Mount + "/creds/" + secret.Path
 	// GET the secret from the API endpoint
 	response, err := client.Logical().Read(endpoint)
 	if err != nil {
 		log.Printf("failed to generate credentials for %s with %s secrets engine", secret.Path, secret.Engine)
-		log.Fatal(err)
+		log.Print(err)
+		return map[string]interface{}{}, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
-	return response.Data
+	// TODO: return data key?
+	return response.Data, nil
 }
 
 // retrieve key-value pair secrets
-func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) map[string]interface{} {
+func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, error) {
 	// declare func scope variable
 	var kvSecret *vault.KVSecret
 	var err error
@@ -103,9 +105,10 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) map[string]int
 	// verify secret read
 	if err != nil {
 		log.Printf("failed to read secret %s from %s secrets Engine", secret.Path, secret.Engine)
-		log.Fatal(err)
+		log.Print(err)
+		return map[string]interface{}{}, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
-	return kvSecret.Data
+	return kvSecret.Data, nil
 }

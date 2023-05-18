@@ -76,4 +76,10 @@ func TestBootstrap(test *testing.T) {
 		KVPath,
 		map[string]interface{}{KVKey: KVValue},
 	)
+	// for full "in" test
+	client.KVv2("secret").Put(
+		context.Background(),
+		"bar/baz",
+		map[string]interface{}{KVKey: KVValue},
+	)
 }
