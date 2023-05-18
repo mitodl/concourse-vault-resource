@@ -6,6 +6,16 @@ import (
 	"log"
 )
 
+// custom type structs
+type Secrets struct {
+	Engine string   `json:"engine"`
+	Paths  []string `json:"paths"`
+}
+
+// key is secret "<mount>-<path>", and value is secret keys and values
+// key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators TODO: if type struct updated in secret for kv versus cred then take advantage of that here
+type SecretValue map[string]interface{}
+
 // concourse standard custom type structs
 type Source struct {
 	AuthEngine   string `json:"auth_engine,omitempty"`
@@ -16,26 +26,14 @@ type Source struct {
 	Insecure     bool   `json:"insecure"`
 }
 
-type Metadata struct {
-	// key is secret "<mount>-<path>" and value is secret keys and values
-	// key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
-	Values map[string]map[string]interface{} `json:"values"`
-}
+type Metadata []SecretValue
 
 type Version struct {
 	Version string `json:"version"`
 }
 
-// custom type structs
-type Secrets struct {
-	Engine string   `json:"engine"`
-	Paths  []string `json:"paths"`
-}
-
-// check/in custom type struct for inputs and outputs
-type CheckResponse struct {
-	Versions []Version
-}
+// check/in custom type structs for inputs and outputs
+type CheckResponse []Version
 
 type inRequest struct {
 	// key is secret mount, and nested map is paths-[<path>, <path>] and engine-<engine>
@@ -68,6 +66,6 @@ func NewInResponse(version Version) *inResponse {
 	// return reference to initialized struct
 	return &inResponse{
 		Version:  version,
-		Metadata: Metadata{Values: map[string]map[string]interface{}{}},
+		Metadata: Metadata([]SecretValue{}),
 	}
 }

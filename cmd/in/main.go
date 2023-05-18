@@ -46,8 +46,11 @@ func main() {
 		for _, secret.Path = range secretParams.Paths {
 			// invoke secret constructor
 			secret.New()
-			// return the secret value and assign to the response struct as key "<mount>-<path>" and value as secret keys and values
-			inResponse.Metadata.Values[mount+"-"+secret.Path] = secret.SecretValue(vaultClient)
+			// return and assign the secret values for the given path
+			secretValues := concourse.SecretValue{}
+			secretValues[mount+"-"+secret.Path] = secret.SecretValue(vaultClient)
+			// append to the response struct metadata values as key "<mount>-<path>" and value as secret keys and values
+			inResponse.Metadata = append(inResponse.Metadata, secretValues)
 		}
 	}
 
