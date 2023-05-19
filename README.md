@@ -1,6 +1,6 @@
 # Concourse Vault Resource
 
-A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets via [Vault](https://www.vault.io).
+A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets via [Vault](https://www.vaultproject.io).
 
 ## Behavior
 

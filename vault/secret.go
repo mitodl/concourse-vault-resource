@@ -113,7 +113,7 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 	return kvSecret.Data, nil
 }
 
-// populate key-value pair secrets
+// populate key-value pair secrets TODO: enable value merges with current value and propagate upwards
 func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}) error {
 	// declare error for later reporting
 	var err error

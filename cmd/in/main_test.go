@@ -12,5 +12,5 @@ func ExampleMain() {
 
 	// invoke main and validate stdout
 	main()
-	// Output: {"metadata":[{"secret-foo/bar":{"password":"supersecret"}},{"secret-bar/baz":{"password":"supersecret"}},{"kv-foo/bar":{"password":"supersecret"}}],"version":{"version":""}}
+	// Output: {"metadata":[{"name":"secret-foo/bar","value":{"password":"supersecret"}},{"name":"secret-bar/baz","value":{"password":"supersecret"}},{"name":"kv-foo/bar","value":{"password":"supersecret"}}],"version":{"version":""}}
 }
