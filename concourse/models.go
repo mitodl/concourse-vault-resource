@@ -7,14 +7,21 @@ import (
 )
 
 // custom type structs
+// key is secret "<mount>-<path>", and value is secret keys and values
+// key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
+type SecretValue map[string]interface{}
+
 type Secrets struct {
 	Engine string   `json:"engine"`
 	Paths  []string `json:"paths"`
 }
 
-// key is secret "<mount>-<path>", and value is secret keys and values
-// key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
-type SecretValue map[string]interface{}
+// TODO potentially combine with above by converting Paths to any (also probably rename) and doing a bunch of type checks BUT wow that seems like not great cost/benefit
+type SecretsPut struct {
+	Engine string `json:"engine"`
+	// key is secret path
+	Secrets map[string]SecretValue `json:"secrets"`
+}
 
 // TODO: for future fine-tuning of secret value (enum?)
 type DBSecretValue struct {
@@ -41,6 +48,7 @@ type Source struct {
 
 type Metadata []SecretValue
 
+// TODO secrets' version
 type Version struct {
 	Version string `json:"version"`
 }
@@ -49,8 +57,7 @@ type Version struct {
 type CheckResponse []Version
 
 type inRequest struct {
-	// key is secret mount, and nested map is paths-[<path>, <path>] and engine-<engine>
-	// cannot use nested structs because mount keys are arbitrary
+	// key is secret mount
 	Params  map[string]Secrets `json:"params"`
 	Source  Source             `json:"source"`
 	Version Version            `json:"version"`
@@ -59,6 +66,18 @@ type inRequest struct {
 type inResponse struct {
 	Metadata Metadata `json:"metadata"`
 	Version  Version  `json:"version"`
+}
+
+type outRequest struct {
+	// key is secret mount
+	Params map[string]SecretsPut `json:"params"`
+	Source Source                `json:"source"`
+}
+
+type outResponse struct {
+	// out metadata currently empty for all events
+	Metadata []map[string]string `json:"metadata"`
+	Version  Version             `json:"version"`
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
@@ -80,5 +99,27 @@ func NewInResponse(version Version) *inResponse {
 	return &inResponse{
 		Version:  version,
 		Metadata: Metadata([]SecretValue{}),
+	}
+}
+
+// outRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
+func NewOutRequest(pipelineJSON io.Reader) *outRequest {
+	// read, decode, and unmarshal the pipeline json io.Reader, and assign to the outRequest pointer
+	var outRequest outRequest
+	if err := json.NewDecoder(pipelineJSON).Decode(&outRequest); err != nil {
+		log.Print("error decoding pipline input from JSON")
+		log.Fatal(err)
+	}
+
+	// return reference
+	return &outRequest
+}
+
+// outResponse constructor
+func NewOutResponse(version Version) *outResponse {
+	// return reference to initialized struct
+	return &outResponse{
+		Version:  version,
+		Metadata: []map[string]string{{}},
 	}
 }

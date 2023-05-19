@@ -17,14 +17,14 @@ const (
 	keyvalue2 SecretEngine = "kv2"
 )
 
-// secret defines a composite Vault secret configuration; TODO: convert value into kv or cred value and propagate to concourse models metadata.values?
+// secret defines a composite Vault secret configuration; TODO: convert value into kv or cred value and then use in functions (maybe re-add to VaultSecret and then re-populate instead of return?)
 type VaultSecret struct {
 	Engine SecretEngine
 	Path   string
 	Mount  string
 }
 
-// secret constructor
+// secret constructor; TODO does not need model type, so could be proper constructor
 func (secret *VaultSecret) New() {
 	// validate mandatory fields specified
 	if len(secret.Engine) == 0 || len(secret.Path) == 0 {
@@ -58,7 +58,7 @@ func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 		return secret.retrieveKVSecret(client)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
-		return map[string]interface{}{}, nil // unreachable, but compile error otherwise
+		return map[string]interface{}{}, nil // unreachable code, but compile error otherwise
 	}
 }
 
@@ -93,7 +93,7 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 			secret.Path,
 		)
 	case keyvalue2:
-		// read kv secret
+		// read kv2 secret
 		kvSecret, err = client.KVv2(secret.Mount).Get(
 			context.Background(),
 			secret.Path,
@@ -111,4 +111,39 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 
 	// return secret value and implicitly coerce type to map[string]interface{}
 	return kvSecret.Data, nil
+}
+
+// populate key-value pair secrets
+func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}) error {
+	// declare error for later reporting
+	var err error
+
+	switch secret.Engine {
+	case keyvalue1:
+		// put kv secret
+		err = client.KVv1(secret.Mount).Put(
+			context.Background(),
+			secret.Path,
+			secretValue,
+		)
+	case keyvalue2:
+		// put kv2 secret TODO validate kvSecret.Data return == secretValue without screwing up err scope
+		_, err = client.KVv2(secret.Mount).Put(
+			context.Background(),
+			secret.Path,
+			secretValue,
+		)
+	default:
+		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
+	}
+
+	// verify secret put
+	if err != nil {
+		log.Printf("failed to put secret %s into %s secrets Engine", secret.Path, secret.Engine)
+		log.Print(err)
+		return err
+	}
+
+	// return no error
+	return nil
 }

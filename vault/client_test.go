@@ -62,22 +62,22 @@ func TestBootstrap(test *testing.T) {
 	// enable secrets: database, aws, kv1 (kv2 enabled by default with dev server)
 	client.Sys().Mount("aws/", &vault.MountInput{Type: "aws"})
 	client.Sys().Mount("database/", &vault.MountInput{Type: "database"})
-	client.Sys().Mount("kv/", &vault.MountInput{Type: "kv"})
+	client.Sys().Mount(KV1Mount, &vault.MountInput{Type: "kv"})
 	// modify new kv secrets engine to be version 1
-	client.Sys().TuneMount("kv/", vault.MountConfigInput{PluginVersion: "1"})
+	client.Sys().TuneMount(KV1Mount, vault.MountConfigInput{PluginVersion: "1"})
 	// put kv1 and kv2 secrets
-	client.KVv1("kv").Put(
+	client.KVv1(KV1Mount).Put(
 		context.Background(),
 		KVPath,
 		map[string]interface{}{KVKey: KVValue},
 	)
-	client.KVv2("secret").Put(
+	client.KVv2(KV2Mount).Put(
 		context.Background(),
 		KVPath,
 		map[string]interface{}{KVKey: KVValue},
 	)
 	// for full "in" test
-	client.KVv2("secret").Put(
+	client.KVv2(KV2Mount).Put(
 		context.Background(),
 		"bar/baz",
 		map[string]interface{}{KVKey: KVValue},

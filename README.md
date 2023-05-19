@@ -21,7 +21,7 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 ### `check`: not implemented
 
-### `in`: interacts with the supported Vault secrets engines
+### `in`: interacts with the supported Vault secrets engines to retrieve and generate secrets
 
 **parameters**
 
@@ -35,7 +35,20 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
   engine: <secret engine> # supported values: database, aws, kv1, kv2
 ```
 
-### `out`: not implemented
+### `out`: interacts with the supported Vault secrets engines to populate secrets
+
+- `<secret_mount path>`: _required_ One or more map/hash/dictionary of the following YAML schema for specifying the secrets to populate.
+
+```yaml
+<secret_mount_path>:
+  secrets:
+    <path/to/secret>:
+      <key>: <value>
+    <path/to/other_secret>:
+      <key>: <value>
+      <key>: <value>
+  engine: <secret engine> # supported values: kv1, kv2
+```
 
 ## Example
 
@@ -71,5 +84,20 @@ jobs:
       kv:
         paths:
         - path/to/secret
+        engine: kv1
+  - put: vault
+    params:
+      secret:
+        secrets:
+          path/to/secret:
+            key: value
+            other_key: other_value
+        engine: kv2
+      kv:
+        secrets:
+          path/to/secret:
+            key: value
+          path/to/other_secret:
+            key: value
         engine: kv1
 ```

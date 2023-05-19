@@ -35,7 +35,7 @@ func main() {
 	for mount, secretParams := range inRequest.Params {
 		// validate engine parameter
 		engineString := secretParams.Engine
-		engine := vault.SecretEngine(secretParams.Engine)
+		engine := vault.SecretEngine(engineString)
 		if len(engine) == 0 {
 			log.Fatalf("an invalid secrets engine was specified: %s", engineString)
 		}
