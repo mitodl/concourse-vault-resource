@@ -42,6 +42,6 @@ func main() {
 
 	// format outResponse into json
 	if err = json.NewEncoder(os.Stdout).Encode(outResponse); err != nil {
-		log.Fatal("unable to unmarshal out response struct to JSON")
+		log.Fatal("unable to marshal out response struct to JSON")
 	}
 }

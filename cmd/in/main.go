@@ -46,9 +46,12 @@ func main() {
 		log.Fatal("one or more attempted secret Read operations failed")
 	}
 
-	// format inResponse into json
+  // write marshalled metadata to file in at /opt/resource/vault.json
+	helper.MetadataToJsonFile(inResponse.Metadata)
+
+	// marshal, encode, and pass inResponse json as output to concourse
 	if err = json.NewEncoder(os.Stdout).Encode(inResponse); err != nil {
-		log.Fatal("unable to unmarshal in response struct to JSON")
+		log.Fatal("unable to marshal in response struct to JSON")
 	}
 
 	// TODO investigate if/how metadata populates concourse env vars ELSE write to <mount>.json for `load_var` later in pipeline

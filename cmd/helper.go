@@ -2,6 +2,8 @@ package helper
 
 import (
   "log"
+  "os"
+  "encoding/json"
 
   vaultapi "github.com/hashicorp/vault/api"
 
@@ -35,5 +37,20 @@ func VaultSecretFromParams(mount string, engineString string) *vault.VaultSecret
   return &vault.VaultSecret{
     Mount:  mount,
     Engine: engine,
+  }
+}
+
+// writes inResponse.Metadata marshalled to json to file at /opt/resource/vault.json
+func MetadataToJsonFile(metadata concourse.Metadata) {
+  // marshal metadata into json data
+  secretsData, err := json.Marshal(metadata)
+  if err != nil {
+    log.Print("unable to marshal metadata struct to json data")
+    log.Fatal(err)
+  }
+	// write secrets to file at /opt/resource/vault.json
+  if err = os.WriteFile("/opt/resource/vault.json", secretsData, 0o600); err != nil {
+    log.Print("error writing secrets to destination file")
+    log.Fatal(err)
   }
 }

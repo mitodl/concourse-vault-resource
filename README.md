@@ -35,6 +35,50 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
   engine: <secret engine> # supported values: database, aws, kv1, kv2
 ```
 
+**usage**
+
+The retrieved secrets and their associated values are stored in the Concourse Metadata and passed back to Concourse with the following Concourse standard schema:
+
+```yaml
+---
+- name: <MOUNT>-<PATH>
+  value:
+    <SECRET VALUES>
+```
+
+```json
+[
+  {
+    "name": "<MOUNT>-<PATH>",
+    "value": {
+      <SECRET VALUES>
+    }
+  }
+]
+```
+
+Examples:
+
+```yaml
+---
+- name: secret-foo/bar
+  value:
+    password: supersecret
+```
+
+```json
+[
+  {
+    "name": "secret-foo/bar",
+    "value": {
+      "password": "supersecret"
+    }
+  }
+]
+```
+
+Theoretically this makes the secrets available as environment variables of the form `<NAME>=<VALUE>`. However, the Metadata is also written as JSON to a file located at `/opt/resource/vault.json` for subsequent loading and parsing in the pipeline.
+
 ### `out`: interacts with the supported Vault secrets engines to populate secrets
 
 - `<secret_mount path>`: _required_ One or more map/hash/dictionary of the following YAML schema for specifying the secrets to populate.
