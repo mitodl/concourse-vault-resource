@@ -19,6 +19,8 @@ func main() {
 
 	// declare err specifically to track any SecretValue failure and trigger only after all secret operations
 	var err error
+	// initialize secretValues to store aggregated retrieved secrets
+	secretValues := concourse.SecretValues{}
 
 	// perform secrets operations
 	for mount, secretParams := range inRequest.Params {
@@ -30,14 +32,7 @@ func main() {
 			// invoke secret constructor
 			secret.New()
 			// return and assign the secret values for the given path
-			var values interface{}
-			values, err = secret.SecretValue(vaultClient)
-			secretValue := concourse.MetadataSecretValue{
-				Name:  mount + "-" + secret.Path,
-				Value: values,
-			}
-			// append to the response struct metadata values as key "<mount>-<path>" and value as secret keys and values
-			inResponse.Metadata = append(inResponse.Metadata, secretValue)
+			secretValues[mount+"-"+secret.Path], err = secret.SecretValue(vaultClient)
 		}
 	}
 
@@ -47,15 +42,11 @@ func main() {
 	}
 
 	// write marshalled metadata to file in at /opt/resource/vault.json
-	helper.MetadataToJsonFile(inResponse.Metadata)
+	helper.MetadataToJsonFile(os.Args[1], secretValues)
 
-	// TODO: temp dummy metadata to bypass concourse type check
-	dummyInResponse := concourse.NewInResponse(inRequest.Version)
 	// marshal, encode, and pass inResponse json as output to concourse
-	if err = json.NewEncoder(os.Stdout).Encode(dummyInResponse); err != nil {
+	if err = json.NewEncoder(os.Stdout).Encode(inResponse); err != nil {
 		log.Print("unable to marshal in response struct to JSON")
 		log.Fatal(err)
 	}
-
-	// TODO investigate if/how metadata populates concourse env vars ELSE write to <mount>.json for `load_var` later in pipeline
 }

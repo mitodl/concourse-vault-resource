@@ -8,13 +8,14 @@ import (
 
 // custom type structs
 // key is secret "<mount>-<path>", and value is secret keys and values
+type SecretValues map[string]SecretValue
 // key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
 type SecretValue map[string]interface{}
 
-// TODO: use metadata return from secrets and transform into acceptable type map[string]string
-type MetadataSecretValue struct {
-	Name  string      `json:"name"`  // secret "<mount>-<path>"
-	Value interface{} `json:"value"` // secret keys and values
+// TODO: use metadata return from secrets and transform into acceptable type map[string]string; disassociate this from secretvalue to make json output easier to parse
+type MetadataEntry struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type Secrets struct {
@@ -26,7 +27,7 @@ type Secrets struct {
 type SecretsPut struct {
 	Engine string `json:"engine"`
 	// key is secret path
-	Secrets map[string]SecretValue `json:"secrets"`
+	Secrets SecretValues `json:"secrets"`
 }
 
 // TODO: for future fine-tuning of secret value (enum?)
@@ -52,8 +53,6 @@ type Source struct {
 	Insecure     bool   `json:"insecure"`
 }
 
-type Metadata []MetadataSecretValue
-
 // TODO secrets' version
 type Version struct {
 	Version string `json:"version"`
@@ -70,8 +69,8 @@ type inRequest struct {
 }
 
 type inResponse struct {
-	Metadata Metadata `json:"metadata"`
-	Version  Version  `json:"version"`
+	Metadata []MetadataEntry `json:"metadata"`
+	Version  Version         `json:"version"`
 }
 
 type outRequest struct {
@@ -104,7 +103,7 @@ func NewInResponse(version Version) *inResponse {
 	// return reference to initialized struct
 	return &inResponse{
 		Version:  version,
-		Metadata: Metadata([]MetadataSecretValue{}),
+		Metadata: []MetadataEntry{},
 	}
 }
 

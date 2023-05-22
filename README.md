@@ -37,47 +37,32 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 **usage**
 
-The retrieved secrets and their associated values are stored in the Concourse Metadata and passed back to Concourse with the following Concourse standard schema:
+The retrieved secrets and their associated values are written as JSON to a file located at `/opt/resource/vault.json` for subsequent loading and parsing in the pipeline with the following schema:
 
 ```yaml
 ---
-- name: <MOUNT>-<PATH>
-  value:
-    <SECRET VALUES>
+<MOUNT>-<PATH>: <SECRET VALUES>
 ```
 
 ```json
-[
-  {
-    "name": "<MOUNT>-<PATH>",
-    "value": {
-      <SECRET VALUES>
-    }
-  }
-]
+{ "<MOUNT>-<PATH>": <SECRET VALUES> }
 ```
 
 Examples:
 
 ```yaml
 ---
-- name: secret-foo/bar
-  value:
-    password: supersecret
+secret-foo/bar:
+  password: supersecret
 ```
 
 ```json
-[
-  {
-    "name": "secret-foo/bar",
-    "value": {
-      "password": "supersecret"
-    }
+{
+  "secret-foo/bar": {
+    "password": "supersecret"
   }
-]
+}
 ```
-
-Theoretically this makes the secrets available as environment variables of the form `<NAME>=<VALUE>`. However, the Metadata is also written as JSON to a file located at `/opt/resource/vault.json` for subsequent loading and parsing in the pipeline.
 
 ### `out`: interacts with the supported Vault secrets engines to populate secrets
 

@@ -41,8 +41,7 @@ func VaultSecretFromParams(mount string, engineString string) *vault.VaultSecret
 }
 
 // writes inResponse.Metadata marshalled to json to file at /opt/resource/vault.json
-//TODO: path to write file should be os.Args[1]
-func MetadataToJsonFile(metadata concourse.Metadata) {
+func MetadataToJsonFile(filePath string, metadata concourse.SecretValues) {
 	// marshal metadata into json data
 	secretsData, err := json.Marshal(metadata)
 	if err != nil {
@@ -50,7 +49,7 @@ func MetadataToJsonFile(metadata concourse.Metadata) {
 		log.Fatal(err)
 	}
 	// write secrets to file at /opt/resource/vault.json
-	secretsFile := os.Args[1] + "/vault.json"
+	secretsFile := filePath + "/vault.json"
 	if err = os.WriteFile(secretsFile, secretsData, 0o600); err != nil {
 		log.Printf("error writing secrets to destination file at %s", secretsFile)
 		log.Fatal(err)
