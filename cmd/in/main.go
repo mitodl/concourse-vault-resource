@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/mitodl/concourse-vault-resource/concourse"
 	"github.com/mitodl/concourse-vault-resource/cmd"
+	"github.com/mitodl/concourse-vault-resource/concourse"
 )
 
 // GET and primary
@@ -33,7 +33,7 @@ func main() {
 			var values interface{}
 			values, err = secret.SecretValue(vaultClient)
 			secretValue := concourse.MetadataSecretValue{
-				Name: mount+"-"+secret.Path,
+				Name:  mount + "-" + secret.Path,
 				Value: values,
 			}
 			// append to the response struct metadata values as key "<mount>-<path>" and value as secret keys and values
@@ -46,12 +46,15 @@ func main() {
 		log.Fatal("one or more attempted secret Read operations failed")
 	}
 
-  // write marshalled metadata to file in at /opt/resource/vault.json
+	// write marshalled metadata to file in at /opt/resource/vault.json
 	helper.MetadataToJsonFile(inResponse.Metadata)
 
+	// TODO: temp dummy metadata to bypass concourse type check
+	dummyInResponse := concourse.NewInResponse(inRequest.Version)
 	// marshal, encode, and pass inResponse json as output to concourse
-	if err = json.NewEncoder(os.Stdout).Encode(inResponse); err != nil {
-		log.Fatal("unable to marshal in response struct to JSON")
+	if err = json.NewEncoder(os.Stdout).Encode(dummyInResponse); err != nil {
+		log.Print("unable to marshal in response struct to JSON")
+		log.Fatal(err)
 	}
 
 	// TODO investigate if/how metadata populates concourse env vars ELSE write to <mount>.json for `load_var` later in pipeline

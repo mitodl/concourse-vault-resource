@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/mitodl/concourse-vault-resource/concourse"
 	"github.com/mitodl/concourse-vault-resource/cmd"
+	"github.com/mitodl/concourse-vault-resource/concourse"
 )
 
 // PUT/POST
@@ -42,6 +42,7 @@ func main() {
 
 	// format outResponse into json
 	if err = json.NewEncoder(os.Stdout).Encode(outResponse); err != nil {
-		log.Fatal("unable to marshal out response struct to JSON")
+		log.Print("unable to marshal out response struct to JSON")
+		log.Fatal(err)
 	}
 }

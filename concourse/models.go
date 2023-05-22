@@ -11,8 +11,9 @@ import (
 // key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
 type SecretValue map[string]interface{}
 
+// TODO: use metadata return from secrets and transform into acceptable type map[string]string
 type MetadataSecretValue struct {
-	Name  string      `json:"name"` // secret "<mount>-<path>"
+	Name  string      `json:"name"`  // secret "<mount>-<path>"
 	Value interface{} `json:"value"` // secret keys and values
 }
 

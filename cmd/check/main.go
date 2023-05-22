@@ -14,6 +14,7 @@ func main() {
 	checkResponse := concourse.CheckResponse([]concourse.Version{{Version: "1"}})
 
 	if err := json.NewEncoder(os.Stdout).Encode(checkResponse); err != nil {
-		log.Fatal("unable to umarshal check response struct to JSON")
+		log.Print("unable to marshal check response struct to JSON")
+		log.Fatal(err)
 	}
 }
