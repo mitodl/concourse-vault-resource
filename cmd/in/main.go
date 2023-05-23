@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// write marshalled metadata to file in at /opt/resource/vault.json
-	helper.MetadataToJsonFile(os.Args[1], secretValues)
+	helper.SecretsToJsonFile(os.Args[1], secretValues)
 
 	// marshal, encode, and pass inResponse json as output to concourse
 	if err = json.NewEncoder(os.Stdout).Encode(inResponse); err != nil {

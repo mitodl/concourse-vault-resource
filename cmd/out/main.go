@@ -31,7 +31,7 @@ func main() {
 			// invoke secret constructor
 			secret.New()
 			// write the secret value to the path for the specified mount and engine
-			err = secret.PopulateKVSecret(vaultClient, secretValue)
+			err = secret.PopulateKVSecret(vaultClient, secretValue, secretParams.Patch)
 		}
 	}
 

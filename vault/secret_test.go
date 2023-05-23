@@ -94,7 +94,11 @@ func TestPopulateKVSecret(test *testing.T) {
 		Path:   KVPath,
 	}
 	kv1VaultSecret.New()
-	err := kv1VaultSecret.PopulateKVSecret(basicVaultClient, map[string]interface{}{KVKey: KVValue})
+	err := kv1VaultSecret.PopulateKVSecret(
+		basicVaultClient,
+		map[string]interface{}{KVKey: KVValue},
+		false,
+	)
 	if err != nil {
 		test.Error("the kv1 secret was not successfully put")
 		test.Error(err)
@@ -105,9 +109,22 @@ func TestPopulateKVSecret(test *testing.T) {
 		Path:   KVPath,
 	}
 	kv2VaultSecret.New()
-	err = kv2VaultSecret.PopulateKVSecret(basicVaultClient, map[string]interface{}{KVKey: KVValue})
+	err = kv2VaultSecret.PopulateKVSecret(
+		basicVaultClient,
+		map[string]interface{}{KVKey: KVValue},
+		false,
+	)
 	if err != nil {
 		test.Error("the kv2 secret was not successfully put")
+		test.Error(err)
+	}
+	err = kv2VaultSecret.PopulateKVSecret(
+		basicVaultClient,
+		map[string]interface{}{"other_password": "ultrasecret"},
+		true,
+	)
+	if err != nil {
+		test.Error("the kv2 secret was not successfully patched")
 		test.Error(err)
 	}
 }

@@ -113,10 +113,11 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 	return kvSecret.Data, nil
 }
 
-// populate key-value pair secrets TODO: enable value merges with current value and propagate upwards
-func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}) error {
-	// declare error for later reporting
+// populate key-value pair secrets TODO: enable value merges with current value and propagate upwards https://pkg.go.dev/github.com/hashicorp/vault/api#KVv2.Patch
+func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) error {
+	// declare error for later reporting and kvsecret for validation
 	var err error
+	var kvSecret *vault.KVSecret
 
 	switch secret.Engine {
 	case keyvalue1:
@@ -127,12 +128,26 @@ func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 			secretValue,
 		)
 	case keyvalue2:
-		// put kv2 secret TODO validate kvSecret.Data return == secretValue without screwing up err scope
-		_, err = client.KVv2(secret.Mount).Put(
-			context.Background(),
-			secret.Path,
-			secretValue,
-		)
+		if patch {
+			// patch kv2 secret
+			kvSecret, err = client.KVv2(secret.Mount).Patch(
+				context.Background(),
+				secret.Path,
+				secretValue,
+			)
+		} else {
+			// put kv2 secret
+			kvSecret, err = client.KVv2(secret.Mount).Put(
+				context.Background(),
+				secret.Path,
+				secretValue,
+			)
+		}
+
+		// validate written secret TODO vault always returning empty for this kvSecret
+		if kvSecret.Data == nil || len(kvSecret.Data) == 0 {
+			//log.Printf("the value was not successfully written to the secret at path %s", secret.Path)
+		}
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
 	}

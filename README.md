@@ -77,7 +77,14 @@ secret-foo/bar:
       <key>: <value>
       <key>: <value>
   engine: <secret engine> # supported values: kv1, kv2
+  patch: <boolean> # default: false; also see below
 ```
+
+Although optimally `patch` would be specified per path, this would be cumbersome in both implementation and usage, and therefore it is specified for all paths for a given `mount`. When `patch` is specified as `true`, then (from [Vault API PKG doc](https://pkg.go.dev/github.com/hashicorp/vault/api#KVv2.Patch)):
+
+> Patch additively updates the most recent version of a key-value secret, differentiating it from Put which will fully overwrite the previous data. Only the key-value pairs that are new or changing need to be provided.
+
+The default value of `false` will trigger the `Put` behavior of overwriting/replacing all values at the specified secret path. **Note that the `patch` nested parameter only functions if the engine is kv2, and is ignored if the engine is kv1.**
 
 ## Example
 

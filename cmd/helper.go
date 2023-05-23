@@ -41,11 +41,11 @@ func VaultSecretFromParams(mount string, engineString string) *vault.VaultSecret
 }
 
 // writes inResponse.Metadata marshalled to json to file at /opt/resource/vault.json
-func MetadataToJsonFile(filePath string, metadata concourse.SecretValues) {
-	// marshal metadata into json data
-	secretsData, err := json.Marshal(metadata)
+func SecretsToJsonFile(filePath string, secretValues concourse.SecretValues) {
+	// marshal secretValues into json data
+	secretsData, err := json.Marshal(secretValues)
 	if err != nil {
-		log.Print("unable to marshal metadata struct to json data")
+		log.Print("unable to marshal SecretValues struct to json data")
 		log.Fatal(err)
 	}
 	// write secrets to file at /opt/resource/vault.json
