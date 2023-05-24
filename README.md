@@ -129,6 +129,7 @@ jobs:
             key: value
             other_key: other_value
         engine: kv2
+        patch: true
       kv:
         secrets:
           path/to/secret:

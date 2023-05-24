@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strconv"
 
 	vaultapi "github.com/hashicorp/vault/api"
 
@@ -54,4 +55,26 @@ func SecretsToJsonFile(filePath string, secretValues concourse.SecretValues) {
 		log.Printf("error writing secrets to destination file at %s", secretsFile)
 		log.Fatal(err)
 	}
+}
+
+// converts Vault raw secret information to Concourse metadata
+func RawSecretToMetadata(prefix string, rawSecret *vaultapi.Secret) []concourse.MetadataEntry {
+	// initialize metadata entries for raw secret
+	var metadataEntries []concourse.MetadataEntry
+
+	// append lease id, lease duration, and renewable converted to string to the entries
+	metadataEntries = append(metadataEntries, concourse.MetadataEntry{
+		Name:  prefix + "-LeaseID",
+		Value: rawSecret.LeaseID,
+	})
+	metadataEntries = append(metadataEntries, concourse.MetadataEntry{
+		Name:  prefix + "-LeaseDuration",
+		Value: strconv.Itoa(rawSecret.LeaseDuration),
+	})
+	metadataEntries = append(metadataEntries, concourse.MetadataEntry{
+		Name:  prefix + "-Renewable",
+		Value: strconv.FormatBool(rawSecret.Renewable),
+	})
+
+	return metadataEntries
 }

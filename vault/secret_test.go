@@ -56,11 +56,17 @@ func TestRetrieveKVSecret(test *testing.T) {
 		Path:   KVPath,
 	}
 	kv1VaultSecret.New()
-	kv1Value, err := kv1VaultSecret.retrieveKVSecret(basicVaultClient)
+	kv1Value, version, rawSecret, err := kv1VaultSecret.retrieveKVSecret(basicVaultClient)
 
 	if err != nil {
 		test.Error("kv1 secret retrieval failed")
 		test.Error(err)
+	}
+	if rawSecret == nil {
+		test.Error("the kv2 secret retrieval returned nil raw secret")
+	}
+	if version != 0 {
+		test.Errorf("the kv1 secret retrieval returned non-zero version: %d", version)
 	}
 	if kv1Value[KVKey] != KVValue {
 		test.Error("the retrieved kv1 secret value was incorrect")
@@ -73,11 +79,17 @@ func TestRetrieveKVSecret(test *testing.T) {
 		Mount:  KV2Mount,
 	}
 	kv2VaultSecret.New()
-	kv2Value, err := kv2VaultSecret.retrieveKVSecret(basicVaultClient)
+	kv2Value, version, rawSecret, err := kv2VaultSecret.retrieveKVSecret(basicVaultClient)
 
 	if err != nil {
 		test.Error("kv2 secret retrieval failed")
 		test.Error(err)
+	}
+	if rawSecret == nil {
+		test.Error("the kv2 secret retrieval returned nil raw secret")
+	}
+	if version == 0 {
+		test.Errorf("the kv2 secret retrieval returned an invalid version: %d", version)
 	}
 	if kv2Value[KVKey] != KVValue {
 		test.Error("the retrieved kv2 secret value was incorrect")
@@ -94,7 +106,7 @@ func TestPopulateKVSecret(test *testing.T) {
 		Path:   KVPath,
 	}
 	kv1VaultSecret.New()
-	err := kv1VaultSecret.PopulateKVSecret(
+	version, rawSecret, err := kv1VaultSecret.PopulateKVSecret(
 		basicVaultClient,
 		map[string]interface{}{KVKey: KVValue},
 		false,
@@ -103,13 +115,19 @@ func TestPopulateKVSecret(test *testing.T) {
 		test.Error("the kv1 secret was not successfully put")
 		test.Error(err)
 	}
+	if rawSecret == nil {
+		test.Error("the kv2 secret retrieval returned nil raw secret")
+	}
+	if version != 0 {
+		test.Errorf("the kv1 secret put returned non-zero version: %d", version)
+	}
 
 	kv2VaultSecret := &VaultSecret{
 		Engine: keyvalue2,
 		Path:   KVPath,
 	}
 	kv2VaultSecret.New()
-	err = kv2VaultSecret.PopulateKVSecret(
+	version, rawSecret, err = kv2VaultSecret.PopulateKVSecret(
 		basicVaultClient,
 		map[string]interface{}{KVKey: KVValue},
 		false,
@@ -118,7 +136,13 @@ func TestPopulateKVSecret(test *testing.T) {
 		test.Error("the kv2 secret was not successfully put")
 		test.Error(err)
 	}
-	err = kv2VaultSecret.PopulateKVSecret(
+	if rawSecret == nil {
+		test.Error("the kv2 secret put returned nil raw secret")
+	}
+	if version == 0 {
+		test.Errorf("the kv2 secret put returned an invalid version: %d", version)
+	}
+	version, rawSecret, err = kv2VaultSecret.PopulateKVSecret(
 		basicVaultClient,
 		map[string]interface{}{"other_password": "ultrasecret"},
 		true,
@@ -126,5 +150,11 @@ func TestPopulateKVSecret(test *testing.T) {
 	if err != nil {
 		test.Error("the kv2 secret was not successfully patched")
 		test.Error(err)
+	}
+	if rawSecret == nil {
+		test.Error("the kv2 secret patch returned nil raw secret")
+	}
+	if version == 0 {
+		test.Errorf("the kv2 secret patch returned an invalid version: %d", version)
 	}
 }

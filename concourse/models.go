@@ -7,13 +7,13 @@ import (
 )
 
 // custom type structs
-// key is secret "<mount>-<path>", and value is secret keys and values
-type SecretValues map[string]SecretValue
-
 // key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
 type SecretValue map[string]interface{}
 
-// TODO: use metadata return from secrets and transform into acceptable type map[string]string https://pkg.go.dev/github.com/hashicorp/vault/api#KVSecret https://pkg.go.dev/github.com/hashicorp/vault/api#Secret https://pkg.go.dev/github.com/hashicorp/vault/api#LifetimeWatcher; disassociate this from secretvalue to make json output easier to parse
+// key is secret "<mount>-<path>", and value is secret keys and values
+type SecretValues map[string]SecretValue
+
+// TODO: 1. return metadata from secrets 2, transform into acceptable type map[string]string in helper 3. assign in in/out https://pkg.go.dev/github.com/hashicorp/vault/api#KVSecret https://pkg.go.dev/github.com/hashicorp/vault/api#Secret https://pkg.go.dev/github.com/hashicorp/vault/api#LifetimeWatcher
 type MetadataEntry struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`

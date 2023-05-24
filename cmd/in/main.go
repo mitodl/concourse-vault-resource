@@ -31,8 +31,8 @@ func main() {
 		for _, secret.Path = range secretParams.Paths {
 			// invoke secret constructor
 			secret.New()
-			// return and assign the secret values for the given path
-			secretValues[mount+"-"+secret.Path], err = secret.SecretValue(vaultClient)
+			// return and assign the secret values for the given path TODO use version and metadata
+			secretValues[mount+"-"+secret.Path], _, _, err = secret.SecretValue(vaultClient)
 		}
 	}
 

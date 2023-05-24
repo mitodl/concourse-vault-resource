@@ -48,14 +48,15 @@ func TestAuthClient(test *testing.T) {
 
 // bootstrap vault server for testing
 func TestBootstrap(test *testing.T) {
-	// check if we should skip bootstrap TODO add conditional
-	if true {
-		test.Skip("skipping vault server bootstrap")
-	}
-
 	// instantiate client for bootstrapping
 	basicVaultConfig.New()
 	client := basicVaultConfig.AuthClient()
+
+	// check if we should skip bootstrap
+	auths, _ := client.Sys().ListAuth()
+	if _, ok := auths["auth/aws/"]; ok {
+		test.Skip("Vault server already bootstrapped; skipping")
+	}
 
 	// enable auth: aws
 	client.Sys().EnableAuthWithOptions("auth/aws", &vault.EnableAuthOptions{Type: "aws"})

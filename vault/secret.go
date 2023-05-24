@@ -17,12 +17,14 @@ const (
 	keyvalue2 SecretEngine = "kv2"
 )
 
-// secret defines a composite Vault secret configuration; TODO: convert value into kv or cred value and then use in functions (maybe re-add to VaultSecret and then re-populate instead of return?)
+// secret defines a composite Vault secret configuration; TODO: split value into kv or cred value and then use in functions (maybe re-add to VaultSecret and then re-populate instead of return?)
 type VaultSecret struct {
 	Engine SecretEngine
 	Path   string
 	Mount  string
 }
+
+//TODO new struct for rawsecret-->metadata for leaner returns
 
 // secret constructor; TODO does not need model type, so could be proper constructor
 func (secret *VaultSecret) New() {
@@ -49,8 +51,8 @@ func (secret *VaultSecret) New() {
 	}
 }
 
-// populate secret type struct with value
-func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, error) {
+// return secret value, version, raw, and possible error
+func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, int, *vault.Secret, error) {
 	switch secret.Engine {
 	case database, aws:
 		return secret.generateCredentials(client)
@@ -58,12 +60,12 @@ func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 		return secret.retrieveKVSecret(client)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
-		return map[string]interface{}{}, nil // unreachable code, but compile error otherwise
+		return map[string]interface{}{}, 0, &vault.Secret{}, nil // unreachable code, but compile error otherwise
 	}
 }
 
 // generate credentials
-func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, error) {
+func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, int, *vault.Secret, error) {
 	// initialize api endpoint for cred generation
 	endpoint := secret.Mount + "/creds/" + secret.Path
 	// GET the secret from the API endpoint
@@ -71,19 +73,19 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string
 	if err != nil {
 		log.Printf("failed to generate credentials for %s with %s secrets engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return map[string]interface{}{}, err
+		return map[string]interface{}{}, 0, response, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
 	// TODO: return data key?
-	return response.Data, nil
+	return response.Data, 0, response, nil
 }
 
 // retrieve key-value pair secrets
-func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, error) {
-	// declare func scope variable
-	var kvSecret *vault.KVSecret
+func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, int, *vault.Secret, error) {
+	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
+	var kvSecret *vault.KVSecret
 
 	switch secret.Engine {
 	case keyvalue1:
@@ -92,6 +94,7 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 			context.Background(),
 			secret.Path,
 		)
+		kvSecret.VersionMetadata = &vault.KVVersionMetadata{Version: 0}
 	case keyvalue2:
 		// read kv2 secret
 		kvSecret, err = client.KVv2(secret.Mount).Get(
@@ -106,22 +109,25 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 	if err != nil {
 		log.Printf("failed to read secret %s from %s secrets Engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return map[string]interface{}{}, err
+		return map[string]interface{}{}, kvSecret.VersionMetadata.Version, kvSecret.Raw, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
-	return kvSecret.Data, nil
+	return kvSecret.Data, kvSecret.VersionMetadata.Version, kvSecret.Raw, nil
 }
 
-// populate key-value pair secrets TODO: enable value merges with current value and propagate upwards https://pkg.go.dev/github.com/hashicorp/vault/api#KVv2.Patch
-func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) error {
-	// declare error for later reporting and kvsecret for validation
+// populate key-value pair secrets
+func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (int, *vault.Secret, error) {
+	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
-	var kvSecret *vault.KVSecret
+	kvSecret := &vault.KVSecret{
+		VersionMetadata: &vault.KVVersionMetadata{Version: 0},
+		Raw:             &vault.Secret{},
+	}
 
 	switch secret.Engine {
 	case keyvalue1:
-		// put kv secret
+		// put kv1 secret
 		err = client.KVv1(secret.Mount).Put(
 			context.Background(),
 			secret.Path,
@@ -143,22 +149,17 @@ func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 				secretValue,
 			)
 		}
-
-		// validate written secret TODO vault always returning empty for this kvSecret
-		if kvSecret.Data == nil || len(kvSecret.Data) == 0 {
-			//log.Printf("the value was not successfully written to the secret at path %s", secret.Path)
-		}
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
 	}
 
 	// verify secret put
 	if err != nil {
-		log.Printf("failed to put secret %s into %s secrets Engine", secret.Path, secret.Engine)
+		log.Printf("failed to update secret %s into %s secrets Engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return err
+		return kvSecret.VersionMetadata.Version, kvSecret.Raw, err
 	}
 
 	// return no error
-	return nil
+	return kvSecret.VersionMetadata.Version, kvSecret.Raw, nil
 }
