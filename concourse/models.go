@@ -44,7 +44,7 @@ type AWSSecretValue struct {
 	ARN           string `json:"arn"`
 }
 
-// concourse standard custom type structs
+// concourse standard type structs
 type Source struct {
 	AuthEngine   string `json:"auth_engine,omitempty"`
 	Address      string `json:"address,omitempty"`
@@ -68,19 +68,13 @@ type inRequest struct {
 	Version Version            `json:"version"`
 }
 
-// TODO combine responses and constructors
-type inResponse struct {
-	Metadata []MetadataEntry `json:"metadata"`
-	Version  Version         `json:"version"`
-}
-
 type outRequest struct {
 	// key is secret mount
 	Params map[string]SecretsPut `json:"params"`
 	Source Source                `json:"source"`
 }
 
-type outResponse struct {
+type response struct {
 	Metadata []MetadataEntry `json:"metadata"`
 	Version  Version         `json:"version"`
 }
@@ -102,11 +96,19 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 	return &inRequest
 }
 
-// inResponse constructor
-func NewInResponse(version Version) *inResponse {
-	// return reference to initialized struct
-	return &inResponse{
-		Version:  version,
+// response constructor
+func NewResponse(version Version) *response {
+	// default empty version for out
+	responseVersion := map[string]string{}
+
+	if version != nil {
+		// use input version for in
+		responseVersion = version
+	}
+
+	// return initialized reference
+	return &response{
+		Version:  responseVersion,
 		Metadata: []MetadataEntry{},
 	}
 }
@@ -122,13 +124,4 @@ func NewOutRequest(pipelineJSON io.Reader) *outRequest {
 
 	// return reference
 	return &outRequest
-}
-
-// outResponse constructor
-func NewOutResponse() *outResponse {
-	// return reference to initialized struct
-	return &outResponse{
-		Version:  map[string]string{},
-		Metadata: []MetadataEntry{},
-	}
 }

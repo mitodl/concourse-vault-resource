@@ -15,7 +15,7 @@ import (
 func main() {
 	// initialize request from concourse pipeline and response storing secret values
 	inRequest := concourse.NewInRequest(os.Stdin)
-	inResponse := concourse.NewInResponse(inRequest.Version)
+	inResponse := concourse.NewResponse(inRequest.Version)
 	// initialize vault client from concourse source
 	vaultClient := helper.VaultClientFromSource(inRequest.Source)
 
