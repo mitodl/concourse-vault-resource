@@ -11,7 +11,7 @@ func ExampleMain() {
 	defer os.Stdin.Close()
 	os.Args[1] = "/opt/resource"
 
-	// invoke main and validate stdout
+	// invoke main and validate stdout TODO validate vault.json content
 	main()
-	// Output: {"metadata":[],"version":{"version":""}}
+	// Output: {"metadata":[{}],"version":{}}
 }

@@ -12,5 +12,5 @@ func ExampleMain() {
 
 	// invoke main and validate stdout
 	main()
-	// Output: {"metadata":[{}],"version":{"version":"1"}}
+	// Output: {"metadata":[{}],"version":{}}
 }

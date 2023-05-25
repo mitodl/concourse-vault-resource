@@ -13,7 +13,6 @@ type SecretValue map[string]interface{}
 // key is secret "<mount>-<path>", and value is secret keys and values
 type SecretValues map[string]SecretValue
 
-// TODO: 1. return metadata from secrets 2, transform into acceptable type map[string]string in helper 3. assign in in/out https://pkg.go.dev/github.com/hashicorp/vault/api#KVSecret https://pkg.go.dev/github.com/hashicorp/vault/api#Secret https://pkg.go.dev/github.com/hashicorp/vault/api#LifetimeWatcher
 type MetadataEntry struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -55,13 +54,13 @@ type Source struct {
 	Insecure     bool   `json:"insecure"`
 }
 
-type Version struct {
-	Version string `json:"version"`
-}
+// key is "<mount>-<path>" and value is version of secret
+type Version map[string]string
 
 // check/in custom type structs for inputs and outputs
 type CheckResponse []Version
 
+// TODO use version for specific secret version retrieval
 type inRequest struct {
 	// key is secret mount
 	Params  map[string]Secrets `json:"params"`
@@ -69,6 +68,7 @@ type inRequest struct {
 	Version Version            `json:"version"`
 }
 
+// TODO combine responses and constructors
 type inResponse struct {
 	Metadata []MetadataEntry `json:"metadata"`
 	Version  Version         `json:"version"`
@@ -81,9 +81,8 @@ type outRequest struct {
 }
 
 type outResponse struct {
-	// out metadata currently empty for all events
-	Metadata []map[string]string `json:"metadata"`
-	Version  Version             `json:"version"`
+	Metadata []MetadataEntry `json:"metadata"`
+	Version  Version         `json:"version"`
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
@@ -93,6 +92,10 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 	if err := json.NewDecoder(pipelineJSON).Decode(&inRequest); err != nil {
 		log.Print("error decoding pipline input from JSON")
 		log.Fatal(err)
+	}
+	// initialize request version with empty map if unspecified
+	if inRequest.Version == nil {
+		inRequest.Version = map[string]string{}
 	}
 
 	// return reference
@@ -122,10 +125,10 @@ func NewOutRequest(pipelineJSON io.Reader) *outRequest {
 }
 
 // outResponse constructor
-func NewOutResponse(version Version) *outResponse {
+func NewOutResponse() *outResponse {
 	// return reference to initialized struct
 	return &outResponse{
-		Version:  version,
-		Metadata: []map[string]string{{}},
+		Version:  map[string]string{},
+		Metadata: []MetadataEntry{},
 	}
 }

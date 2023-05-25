@@ -8,7 +8,7 @@ import (
 	"github.com/mitodl/concourse-vault-resource/concourse"
 )
 
-// no PUT/POST associated with this custom resource
+// no PUT/POST associated with this custom resource TODO maybe https://pkg.go.dev/github.com/hashicorp/vault/api#LifetimeWatcher
 func main() {
 	// initialize checkResponse
 	checkResponse := concourse.CheckResponse([]concourse.Version{{Version: "1"}})

@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	vaultapi "github.com/hashicorp/vault/api"
+
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
 )
@@ -13,7 +15,7 @@ import (
 func main() {
 	// initialize request from concourse pipeline and response to satisfy concourse requirement
 	outRequest := concourse.NewOutRequest(os.Stdin)
-	outResponse := concourse.NewOutResponse(concourse.Version{Version: "1"})
+	outResponse := concourse.NewOutResponse()
 	// initialize vault client from concourse source
 	vaultClient := helper.VaultClientFromSource(outRequest.Source)
 
@@ -30,8 +32,13 @@ func main() {
 		for secret.Path, secretValue = range secretParams.Secrets {
 			// invoke secret constructor
 			secret.New()
-			// write the secret value to the path for the specified mount and engine TODO use version and metadata
-			_, _, err = secret.PopulateKVSecret(vaultClient, secretValue, secretParams.Patch)
+			// declare identifier and rawSecret
+			identifier := mount + "-" + secret.Path
+			var rawSecret *vaultapi.Secret
+			// write the secret value to the path for the specified mount and engine
+			outResponse.Version[identifier], rawSecret, err = secret.PopulateKVSecret(vaultClient, secretValue, secretParams.Patch)
+			// convert rawSecret to concourse metadata and append to metadata
+			outResponse.Metadata = append(outResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
 		}
 	}
 

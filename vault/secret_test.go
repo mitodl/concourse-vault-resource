@@ -65,8 +65,8 @@ func TestRetrieveKVSecret(test *testing.T) {
 	if rawSecret == nil {
 		test.Error("the kv2 secret retrieval returned nil raw secret")
 	}
-	if version != 0 {
-		test.Errorf("the kv1 secret retrieval returned non-zero version: %d", version)
+	if version != "0" {
+		test.Errorf("the kv1 secret retrieval returned non-zero version: %s", version)
 	}
 	if kv1Value[KVKey] != KVValue {
 		test.Error("the retrieved kv1 secret value was incorrect")
@@ -88,8 +88,8 @@ func TestRetrieveKVSecret(test *testing.T) {
 	if rawSecret == nil {
 		test.Error("the kv2 secret retrieval returned nil raw secret")
 	}
-	if version == 0 {
-		test.Errorf("the kv2 secret retrieval returned an invalid version: %d", version)
+	if version == "0" {
+		test.Errorf("the kv2 secret retrieval returned an invalid version: %s", version)
 	}
 	if kv2Value[KVKey] != KVValue {
 		test.Error("the retrieved kv2 secret value was incorrect")
@@ -118,8 +118,8 @@ func TestPopulateKVSecret(test *testing.T) {
 	if rawSecret == nil {
 		test.Error("the kv2 secret retrieval returned nil raw secret")
 	}
-	if version != 0 {
-		test.Errorf("the kv1 secret put returned non-zero version: %d", version)
+	if version != "0" {
+		test.Errorf("the kv1 secret put returned non-zero version: %s", version)
 	}
 
 	kv2VaultSecret := &VaultSecret{
@@ -139,8 +139,8 @@ func TestPopulateKVSecret(test *testing.T) {
 	if rawSecret == nil {
 		test.Error("the kv2 secret put returned nil raw secret")
 	}
-	if version == 0 {
-		test.Errorf("the kv2 secret put returned an invalid version: %d", version)
+	if version == "0" {
+		test.Errorf("the kv2 secret put returned an invalid version: %s", version)
 	}
 	version, rawSecret, err = kv2VaultSecret.PopulateKVSecret(
 		basicVaultClient,
@@ -154,7 +154,7 @@ func TestPopulateKVSecret(test *testing.T) {
 	if rawSecret == nil {
 		test.Error("the kv2 secret patch returned nil raw secret")
 	}
-	if version == 0 {
-		test.Errorf("the kv2 secret patch returned an invalid version: %d", version)
+	if version == "0" {
+		test.Errorf("the kv2 secret patch returned an invalid version: %s", version)
 	}
 }

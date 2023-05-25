@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	vaultapi "github.com/hashicorp/vault/api"
+
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
 )
@@ -31,8 +33,13 @@ func main() {
 		for _, secret.Path = range secretParams.Paths {
 			// invoke secret constructor
 			secret.New()
-			// return and assign the secret values for the given path TODO use version and metadata
-			secretValues[mount+"-"+secret.Path], _, _, err = secret.SecretValue(vaultClient)
+			// declare identifier and rawSecret
+			identifier := mount + "-" + secret.Path
+			var rawSecret *vaultapi.Secret
+			// return and assign the secret values for the given path
+			secretValues[identifier], inResponse.Version[identifier], rawSecret, err = secret.SecretValue(vaultClient)
+			// convert rawSecret to concourse metadata and append to metadata
+			inResponse.Metadata = append(inResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
 		}
 	}
 

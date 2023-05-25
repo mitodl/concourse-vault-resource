@@ -3,6 +3,7 @@ package vault
 import (
 	"context"
 	"log"
+	"strconv"
 
 	vault "github.com/hashicorp/vault/api"
 )
@@ -24,7 +25,7 @@ type VaultSecret struct {
 	Mount  string
 }
 
-//TODO new struct for rawsecret-->metadata for leaner returns
+//TODO new struct for rawsecret-->metadata for leaner returns and easier conversion
 
 // secret constructor; TODO does not need model type, so could be proper constructor
 func (secret *VaultSecret) New() {
@@ -52,7 +53,7 @@ func (secret *VaultSecret) New() {
 }
 
 // return secret value, version, raw, and possible error
-func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, int, *vault.Secret, error) {
+func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
 	switch secret.Engine {
 	case database, aws:
 		return secret.generateCredentials(client)
@@ -60,12 +61,12 @@ func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 		return secret.retrieveKVSecret(client)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
-		return map[string]interface{}{}, 0, &vault.Secret{}, nil // unreachable code, but compile error otherwise
+		return map[string]interface{}{}, "0", &vault.Secret{}, nil // unreachable code, but compile error otherwise
 	}
 }
 
 // generate credentials
-func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, int, *vault.Secret, error) {
+func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
 	// initialize api endpoint for cred generation
 	endpoint := secret.Mount + "/creds/" + secret.Path
 	// GET the secret from the API endpoint
@@ -73,16 +74,16 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string
 	if err != nil {
 		log.Printf("failed to generate credentials for %s with %s secrets engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return map[string]interface{}{}, 0, response, err
+		return map[string]interface{}{}, "0", response, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
 	// TODO: return data key?
-	return response.Data, 0, response, nil
+	return response.Data, "0", response, nil
 }
 
 // retrieve key-value pair secrets
-func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, int, *vault.Secret, error) {
+func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
 	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
 	var kvSecret *vault.KVSecret
@@ -109,15 +110,15 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 	if err != nil {
 		log.Printf("failed to read secret %s from %s secrets Engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return map[string]interface{}{}, kvSecret.VersionMetadata.Version, kvSecret.Raw, err
+		return map[string]interface{}{}, strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
-	return kvSecret.Data, kvSecret.VersionMetadata.Version, kvSecret.Raw, nil
+	return kvSecret.Data, strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, nil
 }
 
-// populate key-value pair secrets
-func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (int, *vault.Secret, error) {
+// populate key-value pair secrets and return version, raw secret, and error
+func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (string, *vault.Secret, error) {
 	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
 	kvSecret := &vault.KVSecret{
@@ -157,9 +158,9 @@ func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 	if err != nil {
 		log.Printf("failed to update secret %s into %s secrets Engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return kvSecret.VersionMetadata.Version, kvSecret.Raw, err
+		return strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, err
 	}
 
 	// return no error
-	return kvSecret.VersionMetadata.Version, kvSecret.Raw, nil
+	return strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, nil
 }
