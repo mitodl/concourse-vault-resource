@@ -11,6 +11,15 @@ func TestNewInRequest(test *testing.T) {
 	//inRequest := NewInRequest()
 }
 
+func TestCheckResponse(test *testing.T) {
+	checkResponse := NewCheckResponse(version)
+
+	if len(*checkResponse) != 1 || len((*checkResponse)[0]) != 1 || (*checkResponse)[0][versionKey] != version[versionKey] {
+		test.Error("the check response constructor returned an unexpected value")
+		test.Errorf("expected value: &[%v], actual: %v", version, checkResponse)
+	}
+}
+
 // test inResponse constructor
 func TestNewInResponse(test *testing.T) {
 	inResponse := NewResponse(version)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
 
 	vault "github.com/hashicorp/vault/api"
 )
@@ -76,10 +77,11 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string
 		log.Print(err)
 		return map[string]interface{}{}, "0", response, err
 	}
+	// calculate the expiration time for version
+	expirationTime := time.Now().Local().Add(time.Second * time.Duration(response.LeaseDuration))
 
-	// return secret value and implicitly coerce type to map[string]interface{}
-	// TODO: return data key?
-	return response.Data, "0", response, nil
+	// return secret value implicitly coerced to map[string]interface{}, expiration time as version, and response as raw secret
+	return response.Data, expirationTime.GoString(), response, nil
 }
 
 // retrieve key-value pair secrets

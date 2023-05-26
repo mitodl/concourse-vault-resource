@@ -23,12 +23,18 @@ type Secrets struct {
 	Paths  []string `json:"paths"`
 }
 
-// TODO potentially combine with above by converting Paths to any (also probably rename) and doing a bunch of type checks BUT wow that seems like not great cost/benefit
+// TODO potentially combine both below with above by converting Paths to any (also probably rename) and doing a bunch of type checks BUT wow that seems like not great cost/benefit
 type SecretsPut struct {
 	Engine string `json:"engine"`
 	Patch  bool   `json:"patch"`
 	// key is secret path
 	Secrets SecretValues `json:"secrets"`
+}
+
+type SecretCheck struct {
+	Engine string `json:"engine"`
+	Mount  string `json:"mount"`
+	Path   string `json:"path"`
 }
 
 // TODO: for future fine-tuning of secret value (enum?)
@@ -46,19 +52,20 @@ type AWSSecretValue struct {
 
 // concourse standard type structs
 type Source struct {
-	AuthEngine   string `json:"auth_engine,omitempty"`
-	Address      string `json:"address,omitempty"`
-	AWSMountPath string `json:"aws_mount_path,omitempty"`
-	AWSVaultRole string `json:"aws_vault_role,omitempty"`
-	Token        string `json:"token,omitempty"`
-	Insecure     bool   `json:"insecure"`
+	AuthEngine   string      `json:"auth_engine,omitempty"`
+	Address      string      `json:"address,omitempty"`
+	AWSMountPath string      `json:"aws_mount_path,omitempty"`
+	AWSVaultRole string      `json:"aws_vault_role,omitempty"`
+	Token        string      `json:"token,omitempty"`
+	Insecure     bool        `json:"insecure"`
+	Secret       SecretCheck `json:"secret,omitempty"`
 }
 
 // key is "<mount>-<path>" and value is version of secret
 type Version map[string]string
 
 // check/in custom type structs for inputs and outputs
-type CheckResponse []Version
+type checkResponse []Version
 
 // TODO use version for specific secret version retrieval
 type inRequest struct {
@@ -77,6 +84,12 @@ type outRequest struct {
 type response struct {
 	Metadata []MetadataEntry `json:"metadata"`
 	Version  Version         `json:"version"`
+}
+
+// checkResponse constructor NOW oops this should be empty and request should be populated with version; or possible use as both?
+func NewCheckResponse(version Version) *checkResponse {
+	// return reference to slice of version
+	return &checkResponse{version}
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
