@@ -25,7 +25,7 @@ func main() {
 	// perform secrets operations
 	for mount, secretParams := range outRequest.Params {
 		// initialize vault secret from concourse params
-		secret := helper.VaultSecretFromParams(mount, secretParams.Engine)
+		secret := helper.VaultSecretFromParams(mount, secretParams.Engine, "")
 
 		// iterate through secrets and assign each path to each vault secret path, and write each secret value to the path
 		var secretValue concourse.SecretValue

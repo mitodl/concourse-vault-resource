@@ -31,7 +31,7 @@ type SecretsPut struct {
 	Secrets SecretValues `json:"secrets"`
 }
 
-type SecretCheck struct {
+type SecretSource struct {
 	Engine string `json:"engine"`
 	Mount  string `json:"mount"`
 	Path   string `json:"path"`
@@ -52,13 +52,13 @@ type AWSSecretValue struct {
 
 // concourse standard type structs
 type Source struct {
-	AuthEngine   string      `json:"auth_engine,omitempty"`
-	Address      string      `json:"address,omitempty"`
-	AWSMountPath string      `json:"aws_mount_path,omitempty"`
-	AWSVaultRole string      `json:"aws_vault_role,omitempty"`
-	Token        string      `json:"token,omitempty"`
-	Insecure     bool        `json:"insecure"`
-	Secret       SecretCheck `json:"secret,omitempty"`
+	AuthEngine   string       `json:"auth_engine,omitempty"`
+	Address      string       `json:"address,omitempty"`
+	AWSMountPath string       `json:"aws_mount_path,omitempty"`
+	AWSVaultRole string       `json:"aws_vault_role,omitempty"`
+	Token        string       `json:"token,omitempty"`
+	Insecure     bool         `json:"insecure"`
+	Secret       SecretSource `json:"secret"`
 }
 
 // key is "<mount>-<path>" and value is version of secret
@@ -104,6 +104,12 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 	if inRequest.Version == nil {
 		inRequest.Version = map[string]string{}
 	}
+	// validate params versus source.secret
+	if inRequest.Source.Secret != (SecretSource{}) && inRequest.Params != nil {
+		log.Fatal("secrets cannot be simultaneously specified in both source and params")
+	} else if inRequest.Source.Secret == (SecretSource{}) && inRequest.Params == nil {
+		log.Fatal("one secret must be specified in source, or one or more secrets in params, and neither was specified")
+	}
 
 	// return reference
 	return &inRequest
@@ -133,6 +139,13 @@ func NewOutRequest(pipelineJSON io.Reader) *outRequest {
 	if err := json.NewDecoder(pipelineJSON).Decode(&outRequest); err != nil {
 		log.Print("error decoding pipline input from JSON")
 		log.Fatal(err)
+	}
+	// validate
+	if outRequest.Source.Secret != (SecretSource{}) {
+		log.Print("specifying a secret in source for a put step has no effect, and that value will be ignored during this step execution")
+	}
+	if outRequest.Params == nil {
+		log.Fatal("no secret parameters were specified for this put step")
 	}
 
 	// return reference

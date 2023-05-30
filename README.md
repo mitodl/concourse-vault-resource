@@ -19,13 +19,34 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 - `insecure`: _optional_ Whether to utilize an insecure connection with Vault (e.g. no HTTP or HTTPS with self-signed cert). default: `false`
 
+- `secret`: _required/optional_ NOW. Mutually exclusive with `params` for `in` step, but one of the two must be specified. Note this value is ignored during `out` as it is not possible for it to have any effect with that step's functionality. The following YAML schema is required for the secret specification.
+
+```yaml
+secret:
+  engine: <secret engine>
+  mount: <secret mount path>
+  path: <secret path>
+```
+
+### `version`: designates the specific version of a secret
+
+NOTE: The KV1 secret engine does not support versioning. NOW block an attempt to specify version with a kv1
+
+**parameters**
+- `version`: _optional_ NOW. The following YAML schema is required for the version specification.
+
+```yaml
+version:
+  NOW
+```
+
 ### `check`: not implemented
 
 ### `in`: interacts with the supported Vault secrets engines to retrieve and generate secrets
 
 **parameters**
 
-- `<secret_mount path>`: _required_ One or more map/hash/dictionary of the following YAML schema for specifying the secrets to retrieve and/or generate.
+- `<secret_mount path>`: _required/optional_ Mutually exclusive with `source.secret`, but one of the two must be specified. One or more map/hash/dictionary of the following YAML schema for specifying the secrets to retrieve and/or generate.
 
 ```yaml
 <secret_mount_path>:
@@ -37,7 +58,7 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 **usage**
 
-The retrieved secrets and their associated values are written as JSON to a file located at `/opt/resource/vault.json` for subsequent loading and parsing in the pipeline with the following schema:
+The retrieved secrets and their associated values are written/appended as JSON formatted strings to a file located at `/opt/resource/vault.json` for subsequent loading and parsing in the pipeline with the following schema:
 
 ```yaml
 ---
@@ -102,6 +123,15 @@ resources:
   source:
     address: https://mitodl.vault.com:8200
     auth_engine: aws
+- name: vault-secret-check
+  type: vault
+  source:
+    address: https://mitodl.vault.com:8200
+    token: abcdefghijklmnopqrstuvwxyz09
+    secret:
+      engine: kv2
+      mount: secret
+      path: path/to/secret
 
 jobs:
 - name: do something
@@ -137,4 +167,5 @@ jobs:
           path/to/other_secret:
             key: value
         engine: kv1
+  - get: vault-secret-check
 ```

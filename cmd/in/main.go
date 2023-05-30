@@ -21,26 +21,41 @@ func main() {
 
 	// declare err specifically to track any SecretValue failure and trigger only after all secret operations
 	var err error
-	// initialize secretValues to store aggregated retrieved secrets
+	// initialize secretValues to store aggregated retrieved secrets and secretSource for efficiency
 	secretValues := concourse.SecretValues{}
+	secretSource := inRequest.Source.Secret
 
-	// perform secrets operations
-	for mount, secretParams := range inRequest.Params {
-		// initialize vault secret from concourse params
-		secret := helper.VaultSecretFromParams(mount, secretParams.Engine)
+	// read secrets from params
+	if secretSource == (concourse.SecretSource{}) {
+		// perform secrets operations
+		for mount, secretParams := range inRequest.Params {
+			// initialize vault secret from concourse params
+			secret := helper.VaultSecretFromParams(mount, secretParams.Engine, "")
 
-		// iterate through secret params' paths and assign each to each vault secret path
-		for _, secret.Path = range secretParams.Paths {
-			// invoke secret constructor
-			secret.New()
-			// declare identifier and rawSecret
-			identifier := mount + "-" + secret.Path
-			var rawSecret *vaultapi.Secret
-			// return and assign the secret values for the given path
-			secretValues[identifier], inResponse.Version[identifier], rawSecret, err = secret.SecretValue(vaultClient)
-			// convert rawSecret to concourse metadata and append to metadata
-			inResponse.Metadata = append(inResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
+			// iterate through secret params' paths and assign each to each vault secret path
+			for _, secret.Path = range secretParams.Paths {
+				// invoke secret constructor
+				secret.New()
+				// declare identifier and rawSecret
+				identifier := mount + "-" + secret.Path
+				var rawSecret *vaultapi.Secret
+				// return and assign the secret values for the given path
+				secretValues[identifier], inResponse.Version[identifier], rawSecret, err = secret.SecretValue(vaultClient)
+				// convert rawSecret to concourse metadata and append to metadata
+				inResponse.Metadata = append(inResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
+			}
 		}
+	} else { // read secret from source TODO cleanup and dry with above
+		// initialize vault secret from concourse params and invoke constructor
+		secret := helper.VaultSecretFromParams(secretSource.Mount, secretSource.Engine, secretSource.Path)
+		secret.New()
+		// declare identifier and rawSecret
+		identifier := secretSource.Mount + "-" + secretSource.Path
+		var rawSecret *vaultapi.Secret
+		// return and assign the secret values for the given path
+		secretValues[identifier], inResponse.Version[identifier], rawSecret, err = secret.SecretValue(vaultClient)
+		// convert rawSecret to concourse metadata and append to metadata
+		inResponse.Metadata = append(inResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
 	}
 
 	// fatally exit if any secret Read operation failed

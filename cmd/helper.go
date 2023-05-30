@@ -27,17 +27,18 @@ func VaultClientFromSource(source concourse.Source) *vaultapi.Client {
 	return vaultConfig.AuthClient()
 }
 
-// instantiates vault secret from concourse params
-func VaultSecretFromParams(mount string, engineString string) *vault.VaultSecret {
+// instantiates vault secret from concourse params or source
+func VaultSecretFromParams(mount string, engineString string, path string) *vault.VaultSecret {
 	// validate engine parameter
 	engine := vault.SecretEngine(engineString)
 	if len(engine) == 0 {
 		log.Fatalf("an invalid secrets engine was specified: %s", engineString)
 	}
-	// initialize vault secret
+	// initialize vault secret and return
 	return &vault.VaultSecret{
 		Mount:  mount,
 		Engine: engine,
+		Path:   path,
 	}
 }
 
