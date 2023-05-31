@@ -30,15 +30,18 @@ secret:
 
 ### `version`: designates the specific version of a secret
 
-NOTE: The KV1 secret engine does not support versioning. NOW block an attempt to specify version with a kv1
+NOTE: The KV1 secret engine does not support versioning.
+NOTE: The `version` input is ignored for `in` as it is associated with a single secret path, and therefore only functions when peered with `source` for `check`.
 
 **parameters**
 - `version`: _optional_ NOW. The following YAML schema is required for the version specification.
 
 ```yaml
 version:
-  NOW
+  <mount>-<path>: <version>
 ```
+
+Note that the `<mount>-<path>` key is actually ignored in `check`, and the values from `source.secret` are used instead.
 
 ### `check`: not implemented
 

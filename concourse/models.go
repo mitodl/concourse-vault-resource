@@ -64,7 +64,12 @@ type Source struct {
 // key is "<mount>-<path>" and value is version of secret
 type Version map[string]string
 
-// check/in custom type structs for inputs and outputs
+// check/in/out custom type structs for inputs and outputs
+type checkRequest struct {
+	Source  Source  `json:"source"`
+	Version Version `json:"version"`
+}
+
 type checkResponse []Version
 
 // TODO use version for specific secret version retrieval
@@ -86,10 +91,30 @@ type response struct {
 	Version  Version         `json:"version"`
 }
 
+// inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
+func NewCheckRequest(pipelineJSON io.Reader) *checkRequest {
+	// read, decode, and unmarshal the pipeline json io.Reader, and assign to the inRequest pointer
+	var checkRequest checkRequest
+	if err := json.NewDecoder(pipelineJSON).Decode(&checkRequest); err != nil {
+		log.Print("error decoding pipline input from JSON")
+		log.Fatal(err)
+	}
+
+	// initialize empty version if unspecified
+	if checkRequest.Version == nil {
+		checkRequest.Version = map[string]string{}
+	} else if checkRequest.Source.Secret.Engine == "kv1" && checkRequest.Version != nil {
+		// validate version not specified for kv1
+		log.Fatal("version cannot be specified in conjunction with a kv version 1 engine secret")
+	}
+
+	return &checkRequest
+}
+
 // checkResponse constructor NOW oops this should be empty and request should be populated with version; or possible use as both?
-func NewCheckResponse(version Version) *checkResponse {
+func NewCheckResponse() *checkResponse {
 	// return reference to slice of version
-	return &checkResponse{version}
+	return &checkResponse{}
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
@@ -100,10 +125,11 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 		log.Print("error decoding pipline input from JSON")
 		log.Fatal(err)
 	}
-	// initialize request version with empty map if unspecified
-	if inRequest.Version == nil {
-		inRequest.Version = map[string]string{}
+	// initialize request version with empty map
+	if inRequest.Version != nil {
+		log.Print("version is currently ignored in the get step as it must be tied to a specific secret path")
 	}
+	inRequest.Version = map[string]string{}
 	// validate params versus source.secret
 	if inRequest.Source.Secret != (SecretSource{}) && inRequest.Params != nil {
 		log.Fatal("secrets cannot be simultaneously specified in both source and params")
