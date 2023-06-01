@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/hashicorp/vault/api v1.9.2 // TODO 1.9.2
-	github.com/hashicorp/vault/api/auth/aws v0.4.0
+	github.com/hashicorp/vault/api/auth/aws v0.4.1
 )
 
 require (
