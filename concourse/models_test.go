@@ -6,12 +6,13 @@ const versionKey = "secret-foo/bar"
 
 var version = map[string]string{versionKey: "1"}
 
-// test inrequest constructor
+// test checkrequest constructor
 
+// test checkresponse constructor
 func TestCheckResponse(test *testing.T) {
-	checkResponse := NewCheckResponse()
+	checkResponse := NewCheckResponse([]Version{version})
 
-	if len(*checkResponse) != 0 {
+	if len(checkResponse) != 1 || checkResponse[0] == nil {
 		test.Error("the check response constructor returned an unexpected value")
 		test.Errorf("expected value: &[], actual: %v", checkResponse)
 	}

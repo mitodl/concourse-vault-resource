@@ -104,7 +104,7 @@ func NewCheckRequest(pipelineJSON io.Reader) *checkRequest {
 
 	// initialize empty version if unspecified
 	if checkRequest.Version == nil {
-		checkRequest.Version = map[string]string{}
+		checkRequest.Version = Version{}
 	} else if checkRequest.Source.Secret.Engine == "kv1" && checkRequest.Version != nil {
 		// validate version not specified for kv1
 		log.Fatal("version cannot be specified in conjunction with a kv version 1 engine secret")
@@ -113,10 +113,10 @@ func NewCheckRequest(pipelineJSON io.Reader) *checkRequest {
 	return &checkRequest
 }
 
-// checkResponse constructor NOW oops this should be empty and request should be populated with version; or possible use as both?
-func NewCheckResponse() *checkResponse {
+// checkResponse constructor
+func NewCheckResponse(versions []Version) checkResponse {
 	// return reference to slice of version
-	return &checkResponse{}
+	return versions
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
@@ -143,7 +143,7 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 	return &inRequest
 }
 
-// response constructor
+// in/out response constructor
 func NewResponse(version Version) *response {
 	// default empty version for out
 	responseVersion := map[string]string{}
