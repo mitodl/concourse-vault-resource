@@ -6,6 +6,8 @@ import (
 	"log"
 )
 
+// TODO https://itnext.io/how-to-use-golang-generics-with-structs-8cabc9353d75
+
 // custom type structs
 // key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
 type SecretValue map[string]interface{}
