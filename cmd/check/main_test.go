@@ -13,5 +13,5 @@ func ExampleMain() {
 	os.Stdin, _ = os.OpenFile("fixtures/token_kv.json", os.O_RDONLY, 0o644)
 
 	main()
-	// Output: [{"secret-foo/bar":"1"}]
+	// Output: [{"version":"1"}]
 }

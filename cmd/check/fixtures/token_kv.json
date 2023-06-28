@@ -10,6 +10,6 @@
     }
   },
   "version": {
-    "secret-foo/bar": "1"
+    "version": "1"
   }
 }

@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
 )
 
-// NOW doublecheck
+// GET for kv2 versions (kv1 not possible and TODO others currently unsupported)
 func main() {
 	// initialize checkRequest and secretSource
 	checkRequest := concourse.NewCheckRequest(os.Stdin)
 	secretSource := checkRequest.Source.Secret
-	var err error
 
 	// initialize vault client from concourse source
 	vaultClient := helper.VaultClientFromSource(checkRequest.Source)
@@ -24,15 +24,30 @@ func main() {
 	secret.New()
 
 	// retrieve version for secret
-	secretVersion := concourse.Version{}
-
-	_, secretVersion[secretSource.Mount+"-"+secretSource.Path], _, err = secret.SecretValue(vaultClient)
+	_, getVersion, _, err := secret.SecretValue(vaultClient)
 	if err != nil {
 		log.Fatalf("version could not be retrieved for %s engine, %s mount, and path %s secret", secretSource.Engine, secretSource.Mount, secretSource.Path)
 	}
 
+	// assign input and get version and initialize versions slice TODO supporting other engines impacts this and next block greatly
+	getVersionInt, _ := strconv.Atoi(getVersion)
+	inputVersion, _ := strconv.Atoi(checkRequest.Version["version"])
+	versions := []concourse.Version{}
+
+	if inputVersion > getVersionInt {
+		log.Printf("the input version %d is later than the retrieved version %s", inputVersion, getVersion)
+		log.Print("only the retrieved version will be returned to Concourse")
+
+		versions = []concourse.Version{concourse.Version{"version": getVersion}}
+	} else {
+		// populate versions slice with delta
+		for versionDelta := inputVersion; versionDelta <= getVersionInt; versionDelta++ {
+			versions = append(versions, concourse.Version{"version": strconv.Itoa(versionDelta)})
+		}
+	}
+
 	// input secret version to constructed response NOW actually desire set of versions between requested version and retrieved version
-	checkResponse := concourse.NewCheckResponse([]concourse.Version{secretVersion})
+	checkResponse := concourse.NewCheckResponse(versions)
 
 	// format checkResponse into json
 	if err := json.NewEncoder(os.Stdout).Encode(&checkResponse); err != nil {
