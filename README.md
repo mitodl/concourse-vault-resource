@@ -19,7 +19,7 @@ A [concourse-ci](https://concourse-ci.org) resource for interacting with secrets
 
 - `insecure`: _optional_ Whether to utilize an insecure connection with Vault (e.g. no HTTP or HTTPS with self-signed cert). default: `false`
 
-- `secret`: _required/optional_ NOW. Mutually exclusive with `params` for `in` step, but one of the two must be specified. Note this value is ignored during `out` as it is not possible for it to have any effect with that step's functionality. The following YAML schema is required for the secret specification.
+- `secret`: _required/optional_ Required for `check` step. Mutually exclusive with `params` for `in` step, but one of the two must be specified. Note this value is ignored during `out` as it is not possible for it to have any effect with that step's functionality. The following YAML schema is required for the secret specification.
 
 ```yaml
 secret:
@@ -30,20 +30,29 @@ secret:
 
 ### `version`: designates the specific version of a secret
 
-NOTE: The KV1 secret engine does not support versioning.
-NOTE: The `version` input is ignored for `in` as it is associated with a single secret path, and therefore only functions when peered with `source` for `check`.
+NOTES:
+- The KV1 secret engine does not support versioning.
+- The `version` input is ignored for `in` as it is associated with a single secret path, and therefore only functions when peered with `source` for `check`.
 
 **parameters**
 - `version`: _optional_ NOW. The following YAML schema is required for the version specification.
 
 ```yaml
 version:
-  <mount>-<path>: <version>
+  version: <version>
 ```
 
-Note that the `<mount>-<path>` key is actually ignored in `check`, and the values from `source.secret` are used instead.
+### `check`: returns secret versions between input version and retrieved version sequentially and inclusive
 
-### `check`: not implemented
+NOTE: currently only the KV2 secrets engine is supported.
+
+This step has no parameters, and utilizes the `source` and `version` values for functionality. It also executes automatically during resource instantiation.
+
+Example output for a KV2 secret with Concourse input version `1` and retrieved Vault version `3`:
+
+```json
+[{"version":"1"},{"version":"2"},{"version":"3"}]
+```
 
 ### `in`: interacts with the supported Vault secrets engines to retrieve and generate secrets
 
