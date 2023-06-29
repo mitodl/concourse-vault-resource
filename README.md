@@ -35,11 +35,18 @@ NOTES:
 - The `version` input is ignored for `in` as it is associated with a single secret path, and therefore only functions when peered with `source` for `check`.
 
 **parameters**
-- `version`: _optional_ NOW. The following YAML schema is required for the version specification.
+- `version`: _optional_ The following YAML schema is required for the version specification.
 
 ```yaml
 version:
   version: <version>
+```
+
+Note that the response schema for the `in` and `out` steps is different because multiple secrets can be specified, and for those steps' responses `version` is descriptive rather than functional.
+
+```yaml
+version:
+  <mount>-<path>: <version>
 ```
 
 ### `check`: returns secret versions between input version and retrieved version sequentially and inclusive

@@ -15,6 +15,9 @@ type SecretValue map[string]interface{}
 // key is secret "<mount>-<path>", and value is secret keys and values
 type SecretValues map[string]SecretValue
 
+// key is "<mount>-<path>" and value is version of secret
+type RespVersion map[string]string
+
 type MetadataEntry struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -63,8 +66,9 @@ type Source struct {
 	Secret       SecretSource `json:"secret"`
 }
 
-// key is "<mount>-<path>" and value is version of secret
-type Version map[string]string
+type Version struct {
+	Version string `json:"version"`
+}
 
 // check/in/out custom type structs for inputs and outputs
 type checkRequest struct {
@@ -90,7 +94,7 @@ type outRequest struct {
 
 type response struct {
 	Metadata []MetadataEntry `json:"metadata"`
-	Version  Version         `json:"version"`
+	Version  RespVersion     `json:"version"`
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse
@@ -103,9 +107,7 @@ func NewCheckRequest(pipelineJSON io.Reader) *checkRequest {
 	}
 
 	// initialize empty version if unspecified
-	if checkRequest.Version == nil {
-		checkRequest.Version = Version{}
-	} else if checkRequest.Source.Secret.Engine == "kv1" && checkRequest.Version != nil {
+	if checkRequest.Source.Secret.Engine == "kv1" && checkRequest.Version != (Version{}) {
 		// validate version not specified for kv1
 		log.Fatal("version cannot be specified in conjunction with a kv version 1 engine secret")
 	}
@@ -128,10 +130,10 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 		log.Fatal(err)
 	}
 	// initialize request version with empty map
-	if inRequest.Version != nil {
+	if inRequest.Version != (Version{}) {
 		log.Print("version is currently ignored in the get step as it must be tied to a specific secret path")
 	}
-	inRequest.Version = map[string]string{}
+	inRequest.Version = Version{}
 	// validate params versus source.secret
 	if inRequest.Source.Secret != (SecretSource{}) && inRequest.Params != nil {
 		log.Fatal("secrets cannot be simultaneously specified in both source and params")
@@ -148,9 +150,9 @@ func NewResponse(version Version) *response {
 	// default empty version for out
 	responseVersion := map[string]string{}
 
-	if version != nil {
-		// use input version for in
-		responseVersion = version
+	if version != (Version{}) {
+		// use input version TODO need to expand functionality for when in accepts specific version inputs to GET
+		responseVersion["mount-path/secret"] = version.Version
 	}
 
 	// return initialized reference
