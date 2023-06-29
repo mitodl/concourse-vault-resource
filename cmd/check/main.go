@@ -16,6 +16,19 @@ func main() {
 	checkRequest := concourse.NewCheckRequest(os.Stdin)
 	secretSource := checkRequest.Source.Secret
 
+	// return immediately if secret unspecified in source
+	if secretSource == (concourse.SecretSource{}) {
+		// dummy check response
+		dummyResponse := concourse.NewCheckResponse([]concourse.Version{concourse.Version{Version: "0"}})
+		// format checkResponse into json
+		if err := json.NewEncoder(os.Stdout).Encode(&dummyResponse); err != nil {
+			log.Print("unable to marshal check response struct to JSON")
+			log.Fatal(err)
+		}
+
+		return
+	}
+
 	// initialize vault client from concourse source
 	vaultClient := helper.VaultClientFromSource(checkRequest.Source)
 

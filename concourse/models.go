@@ -15,7 +15,7 @@ type SecretValue map[string]interface{}
 // key is secret "<mount>-<path>", and value is secret keys and values
 type SecretValues map[string]SecretValue
 
-// key is "<mount>-<path>" and value is version of secret
+// key is "<mount>-<path>" and value is version of secret TODO can be private?
 type RespVersion map[string]string
 
 type MetadataEntry struct {

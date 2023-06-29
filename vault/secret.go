@@ -97,6 +97,7 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 			context.Background(),
 			secret.Path,
 		)
+		// TODO nil pointer dereference if secret does not exist
 		kvSecret.VersionMetadata = &vault.KVVersionMetadata{Version: 0}
 	case keyvalue2:
 		// read kv2 secret

@@ -5,6 +5,7 @@ import (
 	_ "testing"
 )
 
+// TODO returns metadata and then metadata of only first secret path for some reason
 func ExampleMain() {
 	// defer stdin close and establish workdir from argsp[1]
 	defer os.Stdin.Close()
