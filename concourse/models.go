@@ -15,8 +15,8 @@ type SecretValue map[string]interface{}
 // key is secret "<mount>-<path>", and value is secret keys and values
 type SecretValues map[string]SecretValue
 
-// key is "<mount>-<path>" and value is version of secret TODO can be private?
-type RespVersion map[string]string
+// key is "<mount>-<path>" and value is version of secret
+type responseVersion map[string]string
 
 type MetadataEntry struct {
 	Name  string `json:"name"`
@@ -94,7 +94,7 @@ type outRequest struct {
 
 type response struct {
 	Metadata []MetadataEntry `json:"metadata"`
-	Version  RespVersion     `json:"version"`
+	Version  responseVersion `json:"version"`
 }
 
 // inRequest constructor with pipeline param as io.Reader but typically os.Stdin *os.File input because concourse

@@ -97,8 +97,10 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 			context.Background(),
 			secret.Path,
 		)
-		// TODO nil pointer dereference if secret does not exist
-		kvSecret.VersionMetadata = &vault.KVVersionMetadata{Version: 0}
+		// instantiate dummy metadata if secret successfully retrieved
+		if err == nil && kvSecret != nil {
+			kvSecret.VersionMetadata = &vault.KVVersionMetadata{Version: 0}
+		}
 	case keyvalue2:
 		// read kv2 secret
 		kvSecret, err = client.KVv2(secret.Mount).Get(
@@ -110,10 +112,11 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 	}
 
 	// verify secret read
-	if err != nil {
-		log.Printf("failed to read secret %s from %s secrets Engine", secret.Path, secret.Engine)
+	if err != nil || kvSecret == nil {
+		log.Printf("failed to read secret at mount %s and path %s from %s secrets engine", secret.Mount, secret.Path, secret.Engine)
 		log.Print(err)
-		return map[string]interface{}{}, strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, err
+		// return empty values since error triggers at end of execution
+		return map[string]interface{}{}, "0", &vault.Secret{}, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
