@@ -7,6 +7,7 @@ import (
 
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
+	"github.com/mitodl/concourse-vault-resource/vault"
 )
 
 // PUT/POST
@@ -22,14 +23,10 @@ func main() {
 
 	// perform secrets operations
 	for mount, secretParams := range outRequest.Params {
-		// initialize vault secret from concourse params
-		secret := helper.VaultSecretFromParams(mount, secretParams.Engine, "")
-
 		// iterate through secrets and assign each path to each vault secret path, and write each secret value to the path
-		var secretValue concourse.SecretValue
-		for secret.Path, secretValue = range secretParams.Secrets {
-			// invoke secret constructor
-			secret.New()
+		for secretPath, secretValue := range secretParams.Secrets {
+			// initialize vault secret from concourse params
+			secret := vault.NewVaultSecret(secretParams.Engine, mount, secretPath)
 			// declare identifier and rawSecret
 			identifier := mount + "-" + secret.Path
 			// write the secret value to the path for the specified mount and engine

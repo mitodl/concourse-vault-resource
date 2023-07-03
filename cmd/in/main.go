@@ -7,6 +7,7 @@ import (
 
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
+	"github.com/mitodl/concourse-vault-resource/vault"
 )
 
 // GET and primary
@@ -27,13 +28,10 @@ func main() {
 	if secretSource == (concourse.SecretSource{}) {
 		// perform secrets operations
 		for mount, secretParams := range inRequest.Params {
-			// initialize vault secret from concourse params
-			secret := helper.VaultSecretFromParams(mount, secretParams.Engine, "")
-
 			// iterate through secret params' paths and assign each to each vault secret path
-			for _, secret.Path = range secretParams.Paths {
-				// invoke secret constructor
-				secret.New()
+			for _, secretPath := range secretParams.Paths {
+				// initialize vault secret from concourse params
+				secret := vault.NewVaultSecret(secretParams.Engine, mount, secretPath)
 				// declare identifier and rawSecret
 				identifier := mount + "-" + secret.Path
 				// return and assign the secret values for the given path
@@ -43,9 +41,8 @@ func main() {
 			}
 		}
 	} else { // read secret from source TODO cleanup and dry with above
-		// initialize vault secret from concourse params and invoke constructor
-		secret := helper.VaultSecretFromParams(secretSource.Mount, secretSource.Engine, secretSource.Path)
-		secret.New()
+		// initialize vault secret from concourse params
+		secret := vault.NewVaultSecret(secretSource.Engine, secretSource.Mount, secretSource.Path)
 		// declare identifier and rawSecret
 		identifier := secretSource.Mount + "-" + secretSource.Path
 		// return and assign the secret values for the given path

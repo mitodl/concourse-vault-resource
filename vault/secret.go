@@ -26,46 +26,56 @@ type Metadata struct {
 	Renewable     string
 }
 
-// secret defines a composite Vault secret configuration; TODO: split value into kv or cred value and then use in functions (maybe re-add to VaultSecret and then re-populate instead of return?)
-type VaultSecret struct {
+// secret defines a composite Vault secret configuration; TODO: split value into kv or cred value and then use in functions (maybe re-add to vaultSecret and then re-populate instead of return?); consider making these private and defining getters
+type vaultSecret struct {
 	Engine   SecretEngine
-	Path     string
 	Metadata Metadata
 	Mount    string
+	Path     string
 }
 
-// secret constructor; TODO does not need model type, so could be proper constructor
-func (secret *VaultSecret) New() {
+// secret constructor
+func NewVaultSecret(engineString string, mount string, path string) *vaultSecret {
 	// validate mandatory fields specified
-	if len(secret.Engine) == 0 || len(secret.Path) == 0 {
+	if len(engineString) == 0 || len(path) == 0 {
 		log.Fatal("the secret engine and path parameters are mandatory")
 	}
 
-	// validate metadata unspecified TODO once this is proper constructor
-	/*if secret.Metadata != (Metadata{}) {
-		log.Fatal("Vault secret metadata is an output and not an input, and should not be specified prior to the constructor")
-	}*/
+	// validate engine parameter
+	engine := SecretEngine(engineString)
+	if len(engine) == 0 {
+		log.Fatalf("an invalid secrets engine was specified: %s", engineString)
+	}
+
+	// initialize vault secret
+	vaultSecret := &vaultSecret{
+		Engine: engine,
+		Path:   path,
+		Mount:  mount,
+	}
 
 	// determine default mount path if not specified
 	// note current schema renders this pointless, but it would ensure safety to retain
-	if len(secret.Mount) == 0 {
-		switch secret.Engine {
+	if len(mount) == 0 {
+		switch engine {
 		case database:
-			secret.Mount = "database"
+			vaultSecret.Mount = "database"
 		case aws:
-			secret.Mount = "aws"
+			vaultSecret.Mount = "aws"
 		case keyvalue1:
-			secret.Mount = "kv"
+			vaultSecret.Mount = "kv"
 		case keyvalue2:
-			secret.Mount = "secret"
+			vaultSecret.Mount = "secret"
 		default:
-			log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
+			log.Fatalf("an invalid secret engine %s was selected", engine)
 		}
 	}
+
+	return vaultSecret
 }
 
 // return secret value, version, metadata, and possible error
-func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
+func (secret *vaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
 	switch secret.Engine {
 	case database, aws:
 		return secret.generateCredentials(client)
@@ -78,7 +88,7 @@ func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 }
 
 // generate credentials
-func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
+func (secret *vaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
 	// initialize api endpoint for cred generation
 	endpoint := secret.Mount + "/creds/" + secret.Path
 	// GET the secret from the API endpoint
@@ -96,7 +106,7 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string
 }
 
 // retrieve key-value pair secrets
-func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
+func (secret *vaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
 	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
 	var kvSecret *vault.KVSecret
@@ -135,7 +145,7 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 }
 
 // populate key-value pair secrets and return version, metadata, and error
-func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (string, Metadata, error) {
+func (secret *vaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (string, Metadata, error) {
 	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns TODO compare/contrast below init with declare in get
 	var err error
 	kvSecret := &vault.KVSecret{

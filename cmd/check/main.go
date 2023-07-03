@@ -8,6 +8,7 @@ import (
 
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
+	"github.com/mitodl/concourse-vault-resource/vault"
 )
 
 // GET for kv2 versions (kv1 not possible and TODO others currently unsupported)
@@ -33,8 +34,7 @@ func main() {
 	vaultClient := helper.VaultClientFromSource(checkRequest.Source)
 
 	// initialize vault secret from concourse params and invoke constructor
-	secret := helper.VaultSecretFromParams(secretSource.Mount, secretSource.Engine, secretSource.Path)
-	secret.New()
+	secret := vault.NewVaultSecret(secretSource.Engine, secretSource.Mount, secretSource.Path)
 
 	// retrieve version for secret
 	_, getVersion, _, err := secret.SecretValue(vaultClient)

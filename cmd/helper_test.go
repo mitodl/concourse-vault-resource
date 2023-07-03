@@ -14,16 +14,6 @@ func TestVaultClientFromSource(test *testing.T) {
 	VaultClientFromSource(source)
 }
 
-func TestVaultSecretFromParams(test *testing.T) {
-	vaultSecret := VaultSecretFromParams("secret", "kv2", "bar/baz")
-	if vaultSecret.Mount != "secret" || vaultSecret.Engine != "kv2" || vaultSecret.Path != "bar/baz" {
-		test.Error("the VaultSecret did contain the expected member fields")
-		test.Errorf("expected mount: secret, actual: %s", vaultSecret.Mount)
-		test.Errorf("expected engine: kv2, actual: %s", vaultSecret.Engine)
-		test.Errorf("expected path: bar/baz, actual: %s", vaultSecret.Path)
-	}
-}
-
 func TestSecretsToJsonFile(test *testing.T) {
 	secretValues := concourse.SecretValues{}
 	SecretsToJsonFile(".", secretValues)

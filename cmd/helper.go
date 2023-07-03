@@ -26,21 +26,6 @@ func VaultClientFromSource(source concourse.Source) *vaultapi.Client {
 	return vaultConfig.AuthClient()
 }
 
-// instantiates vault secret from concourse params or source
-func VaultSecretFromParams(mount string, engineString string, path string) *vault.VaultSecret {
-	// validate engine parameter
-	engine := vault.SecretEngine(engineString)
-	if len(engine) == 0 {
-		log.Fatalf("an invalid secrets engine was specified: %s", engineString)
-	}
-	// initialize vault secret and return
-	return &vault.VaultSecret{
-		Mount:  mount,
-		Engine: engine,
-		Path:   path,
-	}
-}
-
 // writes inResponse.Metadata marshalled to json to file at /opt/resource/vault.json
 func SecretsToJsonFile(filePath string, secretValues concourse.SecretValues) {
 	// marshal secretValues into json data

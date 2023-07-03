@@ -60,7 +60,7 @@ func (config *VaultConfig) New() {
 	}
 }
 
-// instantiate authenticated vault client with aws-iam auth
+// instantiate authenticated vault client with aws-iam or token auth
 func (config *VaultConfig) AuthClient() *vault.Client {
 	// initialize config
 	VaultConfig := &vault.Config{Address: config.Address}
