@@ -19,20 +19,31 @@ const (
 	keyvalue2 SecretEngine = "kv2"
 )
 
-// secret defines a composite Vault secret configuration; TODO: split value into kv or cred value and then use in functions (maybe re-add to VaultSecret and then re-populate instead of return?)
-type VaultSecret struct {
-	Engine SecretEngine
-	Path   string
-	Mount  string
+// secret metadata
+type metadata struct {
+	LeaseID       string
+	LeaseDuration int
+	Renewable     bool
 }
 
-//TODO new struct for rawsecret-->metadata for leaner returns and easier conversion
+// secret defines a composite Vault secret configuration; TODO: split value into kv or cred value and then use in functions (maybe re-add to VaultSecret and then re-populate instead of return?)
+type VaultSecret struct {
+	Engine   SecretEngine
+	Path     string
+	Metadata metadata
+	Mount    string
+}
 
 // secret constructor; TODO does not need model type, so could be proper constructor
 func (secret *VaultSecret) New() {
 	// validate mandatory fields specified
 	if len(secret.Engine) == 0 || len(secret.Path) == 0 {
 		log.Fatal("the secret engine and path parameters are mandatory")
+	}
+
+	// validate metadata unspecified
+	if secret.Metadata != (metadata{}) {
+		log.Fatal("Vault secret metadata is an output and not an input, and should not be specified prior to the constructor")
 	}
 
 	// determine default mount path if not specified
@@ -66,7 +77,7 @@ func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 	}
 }
 
-// generate credentials
+// generate credentials TODO rawSecret --> secret.metadata
 func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
 	// initialize api endpoint for cred generation
 	endpoint := secret.Mount + "/creds/" + secret.Path
@@ -84,7 +95,7 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string
 	return response.Data, expirationTime.GoString(), response, nil
 }
 
-// retrieve key-value pair secrets
+// retrieve key-value pair secrets TODO rawSecret --> secret.metadata
 func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
 	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
