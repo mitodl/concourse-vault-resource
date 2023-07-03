@@ -20,17 +20,17 @@ const (
 )
 
 // secret metadata
-type metadata struct {
+type Metadata struct {
 	LeaseID       string
-	LeaseDuration int
-	Renewable     bool
+	LeaseDuration string
+	Renewable     string
 }
 
 // secret defines a composite Vault secret configuration; TODO: split value into kv or cred value and then use in functions (maybe re-add to VaultSecret and then re-populate instead of return?)
 type VaultSecret struct {
 	Engine   SecretEngine
 	Path     string
-	Metadata metadata
+	Metadata Metadata
 	Mount    string
 }
 
@@ -41,10 +41,10 @@ func (secret *VaultSecret) New() {
 		log.Fatal("the secret engine and path parameters are mandatory")
 	}
 
-	// validate metadata unspecified
-	if secret.Metadata != (metadata{}) {
+	// validate metadata unspecified TODO once this is proper constructor
+	/*if secret.Metadata != (Metadata{}) {
 		log.Fatal("Vault secret metadata is an output and not an input, and should not be specified prior to the constructor")
-	}
+	}*/
 
 	// determine default mount path if not specified
 	// note current schema renders this pointless, but it would ensure safety to retain
@@ -64,8 +64,8 @@ func (secret *VaultSecret) New() {
 	}
 }
 
-// return secret value, version, raw, and possible error
-func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
+// return secret value, version, metadata, and possible error
+func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
 	switch secret.Engine {
 	case database, aws:
 		return secret.generateCredentials(client)
@@ -73,12 +73,12 @@ func (secret *VaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 		return secret.retrieveKVSecret(client)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
-		return map[string]interface{}{}, "0", &vault.Secret{}, nil // unreachable code, but compile error otherwise
+		return map[string]interface{}{}, "0", Metadata{}, nil // unreachable code, but compile error otherwise
 	}
 }
 
-// generate credentials TODO rawSecret --> secret.metadata
-func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
+// generate credentials
+func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
 	// initialize api endpoint for cred generation
 	endpoint := secret.Mount + "/creds/" + secret.Path
 	// GET the secret from the API endpoint
@@ -86,17 +86,17 @@ func (secret *VaultSecret) generateCredentials(client *vault.Client) (map[string
 	if err != nil {
 		log.Printf("failed to generate credentials for %s with %s secrets engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return map[string]interface{}{}, "0", response, err
+		return map[string]interface{}{}, "0", Metadata{}, err
 	}
 	// calculate the expiration time for version
 	expirationTime := time.Now().Local().Add(time.Second * time.Duration(response.LeaseDuration))
 
-	// return secret value implicitly coerced to map[string]interface{}, expiration time as version, and response as raw secret TODO expiration time to string conversion looks terrible
-	return response.Data, expirationTime.GoString(), response, nil
+	// return secret value implicitly coerced to map[string]interface{}, expiration time as version, and metadata TODO expiration time to string conversion looks terrible
+	return response.Data, expirationTime.GoString(), rawSecretToMetadata(response), nil
 }
 
-// retrieve key-value pair secrets TODO rawSecret --> secret.metadata
-func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, string, *vault.Secret, error) {
+// retrieve key-value pair secrets
+func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
 	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
 	var kvSecret *vault.KVSecret
@@ -127,16 +127,16 @@ func (secret *VaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 		log.Printf("failed to read secret at mount %s and path %s from %s secrets engine", secret.Mount, secret.Path, secret.Engine)
 		log.Print(err)
 		// return empty values since error triggers at end of execution
-		return map[string]interface{}{}, "0", &vault.Secret{}, err
+		return map[string]interface{}{}, "0", Metadata{}, err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}
-	return kvSecret.Data, strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, nil
+	return kvSecret.Data, strconv.Itoa(kvSecret.VersionMetadata.Version), rawSecretToMetadata(kvSecret.Raw), nil
 }
 
-// populate key-value pair secrets and return version, raw secret, and error
-func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (string, *vault.Secret, error) {
-	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
+// populate key-value pair secrets and return version, metadata, and error
+func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (string, Metadata, error) {
+	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns TODO compare/contrast below init with declare in get
 	var err error
 	kvSecret := &vault.KVSecret{
 		VersionMetadata: &vault.KVVersionMetadata{Version: 0},
@@ -175,9 +175,19 @@ func (secret *VaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 	if err != nil {
 		log.Printf("failed to update secret %s into %s secrets Engine", secret.Path, secret.Engine)
 		log.Print(err)
-		return strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, err
+		return "0", Metadata{}, err
 	}
 
 	// return no error
-	return strconv.Itoa(kvSecret.VersionMetadata.Version), kvSecret.Raw, nil
+	return strconv.Itoa(kvSecret.VersionMetadata.Version), rawSecretToMetadata(kvSecret.Raw), nil
+}
+
+// convert *vault.Secret raw secret to secret metadata
+func rawSecretToMetadata(rawSecret *vault.Secret) Metadata {
+	// returne metadata with fields populated from raw secret
+	return Metadata{
+		LeaseID:       rawSecret.LeaseID,
+		LeaseDuration: strconv.Itoa(rawSecret.LeaseDuration),
+		Renewable:     strconv.FormatBool(rawSecret.Renewable),
+	}
 }

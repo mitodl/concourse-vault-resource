@@ -5,8 +5,6 @@ import (
 	"log"
 	"os"
 
-	vaultapi "github.com/hashicorp/vault/api"
-
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
 )
@@ -38,11 +36,10 @@ func main() {
 				secret.New()
 				// declare identifier and rawSecret
 				identifier := mount + "-" + secret.Path
-				var rawSecret *vaultapi.Secret
 				// return and assign the secret values for the given path
-				secretValues[identifier], inResponse.Version[identifier], rawSecret, err = secret.SecretValue(vaultClient)
+				secretValues[identifier], inResponse.Version[identifier], secret.Metadata, err = secret.SecretValue(vaultClient)
 				// convert rawSecret to concourse metadata and append to metadata
-				inResponse.Metadata = append(inResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
+				inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secret.Metadata)...)
 			}
 		}
 	} else { // read secret from source TODO cleanup and dry with above
@@ -51,11 +48,10 @@ func main() {
 		secret.New()
 		// declare identifier and rawSecret
 		identifier := secretSource.Mount + "-" + secretSource.Path
-		var rawSecret *vaultapi.Secret
 		// return and assign the secret values for the given path
-		secretValues[identifier], inResponse.Version[identifier], rawSecret, err = secret.SecretValue(vaultClient)
+		secretValues[identifier], inResponse.Version[identifier], secret.Metadata, err = secret.SecretValue(vaultClient)
 		// convert rawSecret to concourse metadata and append to metadata
-		inResponse.Metadata = append(inResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
+		inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secret.Metadata)...)
 	}
 
 	// fatally exit if any secret Read operation failed

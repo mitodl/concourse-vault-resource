@@ -5,8 +5,6 @@ import (
 	"log"
 	"os"
 
-	vaultapi "github.com/hashicorp/vault/api"
-
 	"github.com/mitodl/concourse-vault-resource/cmd"
 	"github.com/mitodl/concourse-vault-resource/concourse"
 )
@@ -34,11 +32,10 @@ func main() {
 			secret.New()
 			// declare identifier and rawSecret
 			identifier := mount + "-" + secret.Path
-			var rawSecret *vaultapi.Secret
 			// write the secret value to the path for the specified mount and engine
-			outResponse.Version[identifier], rawSecret, err = secret.PopulateKVSecret(vaultClient, secretValue, secretParams.Patch)
+			outResponse.Version[identifier], secret.Metadata, err = secret.PopulateKVSecret(vaultClient, secretValue, secretParams.Patch)
 			// convert rawSecret to concourse metadata and append to metadata
-			outResponse.Metadata = append(outResponse.Metadata, helper.RawSecretToMetadata(identifier, rawSecret)...)
+			outResponse.Metadata = append(outResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secret.Metadata)...)
 		}
 	}
 
