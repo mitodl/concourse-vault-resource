@@ -51,7 +51,8 @@ version:
 
 ### `check`: returns secret versions between input version and retrieved version sequentially and inclusive
 
-NOTE: currently only the KV2 secrets engine is supported.
+NOTE: currently only the KV2 secrets engine is supported.  
+NOTE FOR FUTURE: if the specified secret is dynamic, then the input version is ignored because the comparison is between the current time and the expiration time.
 
 This step has no parameters, and utilizes the `source` and `version` values for functionality. It also executes automatically during resource instantiation.
 

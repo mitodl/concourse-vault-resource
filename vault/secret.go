@@ -102,7 +102,7 @@ func (secret *vaultSecret) generateCredentials(client *vault.Client) (map[string
 	expirationTime := time.Now().Local().Add(time.Second * time.Duration(response.LeaseDuration))
 
 	// return secret value implicitly coerced to map[string]interface{}, expiration time as version, and metadata TODO expiration time to string conversion looks terrible
-	return response.Data, expirationTime.GoString(), rawSecretToMetadata(response), nil
+	return response.Data, expirationTime.String(), rawSecretToMetadata(response), nil
 }
 
 // retrieve key-value pair secrets
