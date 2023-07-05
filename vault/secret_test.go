@@ -2,6 +2,8 @@ package vault
 
 import (
 	"testing"
+
+	vault "github.com/hashicorp/vault/api"
 )
 
 // globals for vault package testing
@@ -16,21 +18,23 @@ const (
 // test secret constructor
 func TestNewVaultSecret(test *testing.T) {
 	dbVaultSecret := NewVaultSecret("database", "", KVPath)
-	if dbVaultSecret.Engine != database || dbVaultSecret.Path != KVPath || dbVaultSecret.Mount != "database" || dbVaultSecret.Metadata != (Metadata{}) {
+	if dbVaultSecret.Engine != database || dbVaultSecret.Path != KVPath || dbVaultSecret.Mount != "database" || dbVaultSecret.Metadata != (Metadata{}) || dbVaultSecret.Dynamic() != true {
 		test.Error("the database Vault secret constructor returned unexpected values")
 		test.Errorf("expected engine: %s, actual: %s", dbVaultSecret.Engine, database)
 		test.Errorf("expected path: %s, actual: %s", dbVaultSecret.Path, KVPath)
 		test.Errorf("expected mount: %s, actual: %s", dbVaultSecret.Mount, "database")
 		test.Errorf("expected empty metadata, actual: %v", dbVaultSecret.Metadata)
+		test.Errorf("expected dynamic to be true, actual: %t", dbVaultSecret.Dynamic())
 	}
 
 	awsVaultSecret := NewVaultSecret("aws", "gcp", KVPath)
-	if awsVaultSecret.Engine != aws || awsVaultSecret.Path != KVPath || awsVaultSecret.Mount != "gcp" || awsVaultSecret.Metadata != (Metadata{}) {
+	if awsVaultSecret.Engine != aws || awsVaultSecret.Path != KVPath || awsVaultSecret.Mount != "gcp" || awsVaultSecret.Metadata != (Metadata{}) || dbVaultSecret.Dynamic() != true {
 		test.Error("the AWS Vault secret constructor returned unexpected values")
 		test.Errorf("expected engine: %s, actual: %s", awsVaultSecret.Engine, aws)
 		test.Errorf("expected path: %s, actual: %s", awsVaultSecret.Path, KVPath)
 		test.Errorf("expected mount: gcp, actual: %s", awsVaultSecret.Mount)
 		test.Errorf("expected empty metadata, actual: %v", awsVaultSecret.Metadata)
+		test.Errorf("expected dynamic to be true, actual: %t", dbVaultSecret.Dynamic())
 	}
 }
 
@@ -130,5 +134,23 @@ func TestPopulateKVSecret(test *testing.T) {
 	}
 	if version == "0" {
 		test.Errorf("the kv2 secret patch returned an invalid version: %s", version)
+	}
+}
+
+// test raw secret to metadata
+func TestRawSecretToMetadata(test *testing.T) {
+	rawSecret := &vault.Secret{
+		LeaseID:       "abcdefg12345",
+		LeaseDuration: 65535,
+		Renewable:     false,
+	}
+
+	metadata := rawSecretToMetadata(rawSecret)
+
+	if metadata.LeaseID != rawSecret.LeaseID || metadata.LeaseDuration != "65535" || metadata.Renewable != "false" {
+		test.Error("the converted metadata returned unexpected values")
+		test.Errorf("expected leaseid: %s, actual: %s", rawSecret.LeaseID, metadata.LeaseID)
+		test.Errorf("expected leaseduration value and type: 65535 string, actual: %s %T", metadata.LeaseDuration, metadata.LeaseDuration)
+		test.Errorf("expected renewable value and type: false string, actual: %s %T", metadata.Renewable, metadata.Renewable)
 	}
 }

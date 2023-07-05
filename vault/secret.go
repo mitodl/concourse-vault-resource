@@ -1,3 +1,4 @@
+// TODO split helpers into another file as this is becoming unwieldy
 package vault
 
 import (
@@ -26,12 +27,13 @@ type Metadata struct {
 	Renewable     string
 }
 
-// secret defines a composite Vault secret configuration; TODO: split value into kv or cred value and then use in functions (maybe re-add to vaultSecret and then re-populate instead of return?); consider making these private and defining getters
+// secret defines a composite Vault secret configuration; TODO: consider making these private and defining getters
 type vaultSecret struct {
 	Engine   SecretEngine
 	Metadata Metadata
 	Mount    string
 	Path     string
+	dynamic  bool
 }
 
 // secret constructor
@@ -54,6 +56,16 @@ func NewVaultSecret(engineString string, mount string, path string) *vaultSecret
 		Mount:  mount,
 	}
 
+	// determine if secret is dynamic TODO use this
+	switch engine {
+	case database, aws:
+		vaultSecret.dynamic = true
+	case keyvalue1, keyvalue2:
+		vaultSecret.dynamic = false
+	default:
+		log.Fatalf("an invalid secret engine %s was selected", engine)
+	}
+
 	// determine default mount path if not specified
 	// note current schema renders this pointless, but it would ensure safety to retain
 	if len(mount) == 0 {
@@ -72,6 +84,11 @@ func NewVaultSecret(engineString string, mount string, path string) *vaultSecret
 	}
 
 	return vaultSecret
+}
+
+// secret readers
+func (secret *vaultSecret) Dynamic() bool {
+	return secret.dynamic
 }
 
 // return secret value, version, metadata, and possible error
@@ -101,7 +118,7 @@ func (secret *vaultSecret) generateCredentials(client *vault.Client) (map[string
 	// calculate the expiration time for version
 	expirationTime := time.Now().Local().Add(time.Second * time.Duration(response.LeaseDuration))
 
-	// return secret value implicitly coerced to map[string]interface{}, expiration time as version, and metadata TODO expiration time to string conversion looks terrible
+	// return secret value implicitly coerced to map[string]interface{}, expiration time as version, and metadata
 	return response.Data, expirationTime.String(), rawSecretToMetadata(response), nil
 }
 
@@ -146,7 +163,7 @@ func (secret *vaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 
 // populate key-value pair secrets and return version, metadata, and error
 func (secret *vaultSecret) PopulateKVSecret(client *vault.Client, secretValue map[string]interface{}, patch bool) (string, Metadata, error) {
-	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns TODO compare/contrast below init with declare in get
+	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns (with dummies for kv1)
 	var err error
 	kvSecret := &vault.KVSecret{
 		VersionMetadata: &vault.KVVersionMetadata{Version: 0},
