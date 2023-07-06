@@ -10,14 +10,14 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
-// secret engine with pseudo-enum
-type SecretEngine string
+// secret engine with pseudo-enum TODO private
+type secretEngine string
 
 const (
-	database  SecretEngine = "database"
-	aws       SecretEngine = "aws"
-	keyvalue1 SecretEngine = "kv1"
-	keyvalue2 SecretEngine = "kv2"
+	database  secretEngine = "database"
+	aws       secretEngine = "aws"
+	keyvalue1 secretEngine = "kv1"
+	keyvalue2 secretEngine = "kv2"
 )
 
 // secret metadata
@@ -27,12 +27,12 @@ type Metadata struct {
 	Renewable     string
 }
 
-// secret defines a composite Vault secret configuration; TODO: consider making these private and defining getters
+// secret defines a composite Vault secret configuration
 type vaultSecret struct {
-	Engine   SecretEngine
-	Metadata Metadata
-	Mount    string
-	Path     string
+	engine   secretEngine
+	metadata Metadata
+	mount    string
+	path     string
 	dynamic  bool
 }
 
@@ -44,16 +44,16 @@ func NewVaultSecret(engineString string, mount string, path string) *vaultSecret
 	}
 
 	// validate engine parameter
-	engine := SecretEngine(engineString)
+	engine := secretEngine(engineString)
 	if len(engine) == 0 {
 		log.Fatalf("an invalid secrets engine was specified: %s", engineString)
 	}
 
 	// initialize vault secret
 	vaultSecret := &vaultSecret{
-		Engine: engine,
-		Path:   path,
-		Mount:  mount,
+		engine: engine,
+		path:   path,
+		mount:  mount,
 	}
 
 	// determine if secret is dynamic TODO use this
@@ -71,13 +71,13 @@ func NewVaultSecret(engineString string, mount string, path string) *vaultSecret
 	if len(mount) == 0 {
 		switch engine {
 		case database:
-			vaultSecret.Mount = "database"
+			vaultSecret.mount = "database"
 		case aws:
-			vaultSecret.Mount = "aws"
+			vaultSecret.mount = "aws"
 		case keyvalue1:
-			vaultSecret.Mount = "kv"
+			vaultSecret.mount = "kv"
 		case keyvalue2:
-			vaultSecret.Mount = "secret"
+			vaultSecret.mount = "secret"
 		default:
 			log.Fatalf("an invalid secret engine %s was selected", engine)
 		}
@@ -87,19 +87,35 @@ func NewVaultSecret(engineString string, mount string, path string) *vaultSecret
 }
 
 // secret readers
+func (secret *vaultSecret) Engine() secretEngine {
+	return secret.engine
+}
+
+func (secret *vaultSecret) Metadata() Metadata {
+	return secret.metadata
+}
+
+func (secret *vaultSecret) Mount() string {
+	return secret.mount
+}
+
+func (secret *vaultSecret) Path() string {
+	return secret.path
+}
+
 func (secret *vaultSecret) Dynamic() bool {
 	return secret.dynamic
 }
 
 // return secret value, version, metadata, and possible error
 func (secret *vaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
-	switch secret.Engine {
+	switch secret.engine {
 	case database, aws:
 		return secret.generateCredentials(client)
 	case keyvalue1, keyvalue2:
 		return secret.retrieveKVSecret(client)
 	default:
-		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
+		log.Fatalf("an invalid secret engine %s was selected", secret.engine)
 		return map[string]interface{}{}, "0", Metadata{}, nil // unreachable code, but compile error otherwise
 	}
 }
@@ -107,11 +123,11 @@ func (secret *vaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 // generate credentials
 func (secret *vaultSecret) generateCredentials(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
 	// initialize api endpoint for cred generation
-	endpoint := secret.Mount + "/creds/" + secret.Path
+	endpoint := secret.mount + "/creds/" + secret.path
 	// GET the secret from the API endpoint
 	response, err := client.Logical().Read(endpoint)
 	if err != nil {
-		log.Printf("failed to generate credentials for %s with %s secrets engine", secret.Path, secret.Engine)
+		log.Printf("failed to generate credentials for %s with %s secrets engine", secret.path, secret.engine)
 		log.Print(err)
 		return map[string]interface{}{}, "0", Metadata{}, err
 	}
@@ -128,12 +144,12 @@ func (secret *vaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 	var err error
 	var kvSecret *vault.KVSecret
 
-	switch secret.Engine {
+	switch secret.engine {
 	case keyvalue1:
 		// read kv secret
-		kvSecret, err = client.KVv1(secret.Mount).Get(
+		kvSecret, err = client.KVv1(secret.mount).Get(
 			context.Background(),
-			secret.Path,
+			secret.path,
 		)
 		// instantiate dummy metadata if secret successfully retrieved
 		if err == nil && kvSecret != nil {
@@ -141,17 +157,17 @@ func (secret *vaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 		}
 	case keyvalue2:
 		// read kv2 secret
-		kvSecret, err = client.KVv2(secret.Mount).Get(
+		kvSecret, err = client.KVv2(secret.mount).Get(
 			context.Background(),
-			secret.Path,
+			secret.path,
 		)
 	default:
-		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
+		log.Fatalf("an invalid secret engine %s was selected", secret.engine)
 	}
 
 	// verify secret read
 	if err != nil || kvSecret == nil {
-		log.Printf("failed to read secret at mount %s and path %s from %s secrets engine", secret.Mount, secret.Path, secret.Engine)
+		log.Printf("failed to read secret at mount %s and path %s from %s secrets engine", secret.mount, secret.path, secret.engine)
 		log.Print(err)
 		// return empty values since error triggers at end of execution
 		return map[string]interface{}{}, "0", Metadata{}, err
@@ -170,37 +186,37 @@ func (secret *vaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 		Raw:             &vault.Secret{},
 	}
 
-	switch secret.Engine {
+	switch secret.engine {
 	case keyvalue1:
 		// put kv1 secret
-		err = client.KVv1(secret.Mount).Put(
+		err = client.KVv1(secret.mount).Put(
 			context.Background(),
-			secret.Path,
+			secret.path,
 			secretValue,
 		)
 	case keyvalue2:
 		if patch {
 			// patch kv2 secret
-			kvSecret, err = client.KVv2(secret.Mount).Patch(
+			kvSecret, err = client.KVv2(secret.mount).Patch(
 				context.Background(),
-				secret.Path,
+				secret.path,
 				secretValue,
 			)
 		} else {
 			// put kv2 secret
-			kvSecret, err = client.KVv2(secret.Mount).Put(
+			kvSecret, err = client.KVv2(secret.mount).Put(
 				context.Background(),
-				secret.Path,
+				secret.path,
 				secretValue,
 			)
 		}
 	default:
-		log.Fatalf("an invalid secret engine %s was selected", secret.Engine)
+		log.Fatalf("an invalid secret engine %s was selected", secret.engine)
 	}
 
 	// verify secret put
 	if err != nil {
-		log.Printf("failed to update secret %s into %s secrets Engine", secret.Path, secret.Engine)
+		log.Printf("failed to update secret %s into %s secrets Engine", secret.path, secret.engine)
 		log.Print(err)
 		return "0", Metadata{}, err
 	}

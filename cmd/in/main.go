@@ -21,6 +21,7 @@ func main() {
 	// declare err specifically to track any SecretValue failure and trigger only after all secret operations
 	var err error
 	// initialize secretValues to store aggregated retrieved secrets and secretSource for efficiency
+	var secretMetadata vault.Metadata
 	secretValues := concourse.SecretValues{}
 	secretSource := inRequest.Source.Secret
 
@@ -33,11 +34,11 @@ func main() {
 				// initialize vault secret from concourse params
 				secret := vault.NewVaultSecret(secretParams.Engine, mount, secretPath)
 				// declare identifier and rawSecret
-				identifier := mount + "-" + secret.Path
+				identifier := mount + "-" + secretPath
 				// return and assign the secret values for the given path
-				secretValues[identifier], inResponse.Version[identifier], secret.Metadata, err = secret.SecretValue(vaultClient)
+				secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient)
 				// convert rawSecret to concourse metadata and append to metadata
-				inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secret.Metadata)...)
+				inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 			}
 		}
 	} else { // read secret from source TODO cleanup and dry with above
@@ -46,9 +47,9 @@ func main() {
 		// declare identifier and rawSecret
 		identifier := secretSource.Mount + "-" + secretSource.Path
 		// return and assign the secret values for the given path
-		secretValues[identifier], inResponse.Version[identifier], secret.Metadata, err = secret.SecretValue(vaultClient)
+		secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient)
 		// convert rawSecret to concourse metadata and append to metadata
-		inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secret.Metadata)...)
+		inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 	}
 
 	// fatally exit if any secret Read operation failed

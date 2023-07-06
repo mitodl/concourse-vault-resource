@@ -20,6 +20,7 @@ func main() {
 
 	// declare err specifically to track any SecretValue failure and trigger only after all secret operations
 	var err error
+	var secretMetadata vault.Metadata
 
 	// perform secrets operations
 	for mount, secretParams := range outRequest.Params {
@@ -28,11 +29,11 @@ func main() {
 			// initialize vault secret from concourse params
 			secret := vault.NewVaultSecret(secretParams.Engine, mount, secretPath)
 			// declare identifier and rawSecret
-			identifier := mount + "-" + secret.Path
+			identifier := mount + "-" + secretPath
 			// write the secret value to the path for the specified mount and engine
-			outResponse.Version[identifier], secret.Metadata, err = secret.PopulateKVSecret(vaultClient, secretValue, secretParams.Patch)
+			outResponse.Version[identifier], secretMetadata, err = secret.PopulateKVSecret(vaultClient, secretValue, secretParams.Patch)
 			// convert rawSecret to concourse metadata and append to metadata
-			outResponse.Metadata = append(outResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secret.Metadata)...)
+			outResponse.Metadata = append(outResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 		}
 	}
 
