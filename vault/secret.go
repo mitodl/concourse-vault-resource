@@ -27,11 +27,10 @@ type Metadata struct {
 
 // secret defines a composite Vault secret configuration
 type vaultSecret struct {
-	engine   secretEngine
-	metadata Metadata
-	mount    string
-	path     string
-	dynamic  bool
+	engine  secretEngine
+	mount   string
+	path    string
+	dynamic bool
 }
 
 // secret constructor
@@ -89,10 +88,6 @@ func (secret *vaultSecret) Engine() secretEngine {
 	return secret.engine
 }
 
-func (secret *vaultSecret) Metadata() Metadata {
-	return secret.metadata
-}
-
 func (secret *vaultSecret) Mount() string {
 	return secret.mount
 }
@@ -111,7 +106,7 @@ func (secret *vaultSecret) SecretValue(client *vault.Client) (map[string]interfa
 	case database, aws:
 		return secret.generateCredentials(client)
 	case keyvalue1, keyvalue2:
-		return secret.retrieveKVSecret(client)
+		return secret.retrieveKVSecret(client, 0)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.engine)
 		return map[string]interface{}{}, "0", Metadata{}, nil // unreachable code, but compile error otherwise

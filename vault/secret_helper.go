@@ -28,13 +28,16 @@ func (secret *vaultSecret) generateCredentials(client *vault.Client) (map[string
 }
 
 // retrieve key-value pair secrets
-func (secret *vaultSecret) retrieveKVSecret(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
+func (secret *vaultSecret) retrieveKVSecret(client *vault.Client, version int) (map[string]interface{}, string, Metadata, error) {
 	// declare error for return to cmd, and kvSecret for metadata.version and raw secret assignments and returns
 	var err error
 	var kvSecret *vault.KVSecret
 
 	switch secret.engine {
 	case keyvalue1:
+		if version != 0 {
+			log.Print("versions cannot be used with the KV1 secrets engine")
+		}
 		// read kv secret
 		kvSecret, err = client.KVv1(secret.mount).Get(
 			context.Background(),
@@ -45,11 +48,19 @@ func (secret *vaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 			kvSecret.VersionMetadata = &vault.KVVersionMetadata{Version: 0}
 		}
 	case keyvalue2:
-		// read kv2 secret
-		kvSecret, err = client.KVv2(secret.mount).Get(
-			context.Background(),
-			secret.path,
-		)
+		// read latest kv2 secret
+		if version == 0 {
+			kvSecret, err = client.KVv2(secret.mount).Get(
+				context.Background(),
+				secret.path,
+			)
+		} else { // read specific version of kv2 secret
+			kvSecret, err = client.KVv2(secret.mount).GetVersion(
+				context.Background(),
+				secret.path,
+				version,
+			)
+		}
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.engine)
 	}
@@ -60,6 +71,10 @@ func (secret *vaultSecret) retrieveKVSecret(client *vault.Client) (map[string]in
 		log.Print(err)
 		// return empty values since error triggers at end of execution
 		return map[string]interface{}{}, "0", Metadata{}, err
+	} else if kvSecret.Data == nil { // verify version exists
+		log.Printf("the input version %d (0 signifies latest) does not exist for the secret at mount %s and path %s from %s secrets engine", version, secret.mount, secret.path, secret.engine)
+		// return partial information values since error triggers at end of execution
+		return map[string]interface{}{}, strconv.Itoa(version), rawSecretToMetadata(kvSecret.Raw), err
 	}
 
 	// return secret value and implicitly coerce type to map[string]interface{}

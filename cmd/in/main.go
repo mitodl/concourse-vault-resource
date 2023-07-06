@@ -41,7 +41,7 @@ func main() {
 				inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 			}
 		}
-	} else { // read secret from source TODO cleanup and dry with above
+	} else { // read secret from source
 		// initialize vault secret from concourse params
 		secret := vault.NewVaultSecret(secretSource.Engine, secretSource.Mount, secretSource.Path)
 		// declare identifier and rawSecret
