@@ -37,7 +37,7 @@ func main() {
 	secret := vault.NewVaultSecret(secretSource.Engine, secretSource.Mount, secretSource.Path)
 
 	// retrieve version for secret
-	_, getVersion, _, err := secret.SecretValue(vaultClient)
+	_, getVersion, _, err := secret.SecretValue(vaultClient, "")
 	if err != nil {
 		log.Fatalf("version could not be retrieved for %s engine, %s mount, and path %s secret", secretSource.Engine, secretSource.Mount, secretSource.Path)
 	}

@@ -26,7 +26,7 @@ func TestNewInRequest(test *testing.T) {
 
 // test inResponse constructor
 func TestNewInResponse(test *testing.T) {
-	inResponse := NewResponse(version)
+	inResponse := NewResponse()
 
 	if len(inResponse.Metadata) != 0 { //|| inResponse.Version[versionKey] != respVersion[versionKey] {
 		test.Error("the in response constructor returned unexpected values")
@@ -39,7 +39,7 @@ func TestNewInResponse(test *testing.T) {
 
 // test outResponse constructor
 func TestOutResponse(test *testing.T) {
-	outResponse := NewResponse(Version{})
+	outResponse := NewResponse()
 
 	if len(outResponse.Metadata) != 0 || len(outResponse.Version) != 0 {
 		test.Error("the out response constructor returned unexpected values")

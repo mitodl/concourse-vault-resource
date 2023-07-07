@@ -78,7 +78,6 @@ type checkRequest struct {
 
 type checkResponse []Version
 
-// TODO use version for specific secret version retrieval
 type inRequest struct {
 	// key is secret mount
 	Params  map[string]Secrets `json:"params"`
@@ -129,15 +128,20 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 		log.Print("error decoding pipline input from JSON")
 		log.Fatal(err)
 	}
-	// initialize request version with empty map
-	if inRequest.Version != (Version{}) {
-		log.Print("version is currently ignored in the get step as it must be tied to a specific secret path")
+
+	// these conditionals are evaluated multiple times so assign here
+	noSourceSecret := inRequest.Source.Secret == (SecretSource{})
+	noParamsSecret := inRequest.Params == nil
+
+	// info message for request version specified and params usage
+	if inRequest.Version != (Version{}) && !noParamsSecret {
+		log.Print("version is ignored in the get step with params as it must be tied to a specific secret path")
 	}
-	inRequest.Version = Version{}
+
 	// validate params versus source.secret
-	if inRequest.Source.Secret != (SecretSource{}) && inRequest.Params != nil {
+	if !noSourceSecret && !noParamsSecret {
 		log.Fatal("secrets cannot be simultaneously specified in both source and params")
-	} else if inRequest.Source.Secret == (SecretSource{}) && inRequest.Params == nil {
+	} else if noSourceSecret && noParamsSecret {
 		log.Fatal("one secret must be specified in source, or one or more secrets in params, and neither was specified")
 	}
 
@@ -146,18 +150,10 @@ func NewInRequest(pipelineJSON io.Reader) *inRequest {
 }
 
 // in/out response constructor
-func NewResponse(version Version) *response {
-	// default empty version for out
-	responseVersion := map[string]string{}
-
-	if version != (Version{}) {
-		// use input version TODO need to expand functionality for when in accepts specific version inputs to GET
-		responseVersion["mount-path/secret"] = version.Version
-	}
-
+func NewResponse() *response {
 	// return initialized reference
 	return &response{
-		Version:  responseVersion,
+		Version:  map[string]string{},
 		Metadata: []MetadataEntry{},
 	}
 }

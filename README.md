@@ -32,7 +32,8 @@ secret:
 
 NOTES:
 - The KV1 secret engine does not support versioning.
-- The `version` input is ignored for `in` as it is associated with a single secret path, and therefore only functions when peered with `source` for `check`.
+- The KV2 secret engine currently returns the latest version of a secret if version is input as `"0"`, but this behavior may be subject to changes in the API, and no version should be specified if the latest is desired.
+- The `version` input is ignored for `in` with `params` as it is associated with a single secret path, and therefore only functions when peered with `source` for `check` or `in`.
 
 **parameters**
 - `version`: _optional_ The following YAML schema is required for the version specification.
@@ -42,7 +43,7 @@ version:
   version: <version>
 ```
 
-Note that the response schema for the `in` and `out` steps is different because multiple secrets can be specified, and for those steps' responses `version` is descriptive rather than functional.
+Note that the response `version` schema for the `in` and `out` steps is different because multiple secrets can be specified, and for those steps' responses `version` is descriptive rather than functional. Therefore the version information displayed in Concourse for those steps appears like:
 
 ```yaml
 version:

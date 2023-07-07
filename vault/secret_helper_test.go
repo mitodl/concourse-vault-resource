@@ -13,7 +13,7 @@ func TestRetrieveKVSecret(test *testing.T) {
 	basicVaultClient := basicVaultConfig.AuthClient()
 
 	kv1VaultSecret := NewVaultSecret("kv1", "", KVPath)
-	kv1Value, version, secretMetadata, err := kv1VaultSecret.retrieveKVSecret(basicVaultClient, 0)
+	kv1Value, version, secretMetadata, err := kv1VaultSecret.retrieveKVSecret(basicVaultClient, "")
 
 	if err != nil {
 		test.Error("kv1 secret retrieval failed")
@@ -31,7 +31,7 @@ func TestRetrieveKVSecret(test *testing.T) {
 	}
 
 	kv2VaultSecret := NewVaultSecret("kv2", KV2Mount, KVPath)
-	kv2Value, version, secretMetadata, err := kv2VaultSecret.retrieveKVSecret(basicVaultClient, 0)
+	kv2Value, version, secretMetadata, err := kv2VaultSecret.retrieveKVSecret(basicVaultClient, "")
 
 	if err != nil {
 		test.Error("kv2 secret retrieval failed")

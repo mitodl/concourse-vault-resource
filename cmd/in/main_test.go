@@ -37,7 +37,7 @@ func TestMain(test *testing.T) {
 	secretsFile, _ := os.ReadFile("/opt/resource/vault.json")
 	if string(secretsFile) != secretsContents {
 		test.Error("vault.json did not contain expected secrets data")
-		test.Errorf("actal file contents: %s", secretsFile)
+		test.Errorf("actual file contents: %s", secretsFile)
 		test.Errorf("expected file contents: %s", secretsContents)
 	}
 }

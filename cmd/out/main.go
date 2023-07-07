@@ -14,7 +14,7 @@ import (
 func main() {
 	// initialize request from concourse pipeline and response to satisfy concourse requirement
 	outRequest := concourse.NewOutRequest(os.Stdin)
-	outResponse := concourse.NewResponse(concourse.Version{})
+	outResponse := concourse.NewResponse()
 	// initialize vault client from concourse source
 	vaultClient := helper.VaultClientFromSource(outRequest.Source)
 

@@ -101,12 +101,12 @@ func (secret *vaultSecret) Dynamic() bool {
 }
 
 // return secret value, version, metadata, and possible error (GET/READ/READ)
-func (secret *vaultSecret) SecretValue(client *vault.Client) (map[string]interface{}, string, Metadata, error) {
+func (secret *vaultSecret) SecretValue(client *vault.Client, version string) (map[string]interface{}, string, Metadata, error) {
 	switch secret.engine {
 	case database, aws:
 		return secret.generateCredentials(client)
 	case keyvalue1, keyvalue2:
-		return secret.retrieveKVSecret(client, 0)
+		return secret.retrieveKVSecret(client, version)
 	default:
 		log.Fatalf("an invalid secret engine %s was selected", secret.engine)
 		return map[string]interface{}{}, "0", Metadata{}, nil // unreachable code, but compile error otherwise

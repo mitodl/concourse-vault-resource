@@ -13,8 +13,8 @@ import (
 // GET and primary
 func main() {
 	// initialize request from concourse pipeline and response storing secret values
-	inRequest := concourse.NewInRequest(os.Stdin)
-	inResponse := concourse.NewResponse(inRequest.Version)
+	inRequest := concourse.NewInRequest(os.Stdin) // TODO use version
+	inResponse := concourse.NewResponse()
 	// initialize vault client from concourse source
 	vaultClient := helper.VaultClientFromSource(inRequest.Source)
 
@@ -36,7 +36,7 @@ func main() {
 				// declare identifier and rawSecret
 				identifier := mount + "-" + secretPath
 				// return and assign the secret values for the given path
-				secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient)
+				secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient, "")
 				// convert rawSecret to concourse metadata and append to metadata
 				inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 			}
@@ -47,7 +47,7 @@ func main() {
 		// declare identifier and rawSecret
 		identifier := secretSource.Mount + "-" + secretSource.Path
 		// return and assign the secret values for the given path
-		secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient)
+		secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient, inRequest.Version.Version)
 		// convert rawSecret to concourse metadata and append to metadata
 		inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 	}
@@ -57,7 +57,7 @@ func main() {
 		log.Fatal("one or more attempted secret Read operations failed")
 	}
 
-	// write marshalled metadata to file in at /opt/resource/vault.json
+	// write marshalled metadata to file at /opt/resource/vault.json
 	helper.SecretsToJsonFile(os.Args[1], secretValues)
 
 	// marshal, encode, and pass inResponse json as output to concourse
