@@ -105,7 +105,8 @@ func (config *VaultConfig) AuthClient() *vault.Client {
 		// authenticate with aws iam
 		awsAuth, err := auth.NewAWSAuth(loginOption)
 		if err != nil {
-			log.Fatal("unable to initialize AWS IAM authentication")
+			log.Print("unable to initialize AWS IAM authentication")
+			log.Fatal(err)
 		}
 
 		authInfo, err := client.Auth().Login(context.Background(), awsAuth)

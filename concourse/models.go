@@ -10,10 +10,10 @@ import (
 
 // custom type structs
 // key-value pairs would be arbitrary for kv1 and kv2, but are standardized schema for credential generators
-type SecretValue map[string]interface{}
+type secretValue map[string]interface{}
 
 // key is secret "<mount>-<path>", and value is secret keys and values
-type SecretValues map[string]SecretValue
+type SecretValues map[string]secretValue
 
 // key is "<mount>-<path>" and value is version of secret
 type responseVersion map[string]string
@@ -23,13 +23,13 @@ type MetadataEntry struct {
 	Value string `json:"value"`
 }
 
-type Secrets struct {
+type secrets struct {
 	Engine string   `json:"engine"`
 	Paths  []string `json:"paths"`
 }
 
 // TODO potentially combine both below with above by converting Paths to any (also probably rename) and doing a bunch of type checks BUT wow that seems like not great cost/benefit
-type SecretsPut struct {
+type secretsPut struct {
 	Engine string `json:"engine"`
 	Patch  bool   `json:"patch"`
 	// key is secret path
@@ -43,12 +43,12 @@ type SecretSource struct {
 }
 
 // TODO: for future fine-tuning of secret value (enum?)
-type DBSecretValue struct {
+type dbSecretValue struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
-type KVSecretValue map[string]interface{}
-type AWSSecretValue struct {
+type kvSecretValue map[string]interface{}
+type awsSecretValue struct {
 	AccessKey     string `json:"access_key"`
 	SecretKey     string `json:"secret_key"`
 	SecurityToken string `json:"security_token,omitempty"`
@@ -80,14 +80,14 @@ type checkResponse []Version
 
 type inRequest struct {
 	// key is secret mount
-	Params  map[string]Secrets `json:"params"`
+	Params  map[string]secrets `json:"params"`
 	Source  Source             `json:"source"`
 	Version Version            `json:"version"`
 }
 
 type outRequest struct {
 	// key is secret mount
-	Params map[string]SecretsPut `json:"params"`
+	Params map[string]secretsPut `json:"params"`
 	Source Source                `json:"source"`
 }
 

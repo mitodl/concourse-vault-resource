@@ -53,7 +53,7 @@ func NewVaultSecret(engineString string, mount string, path string) *vaultSecret
 		mount:  mount,
 	}
 
-	// determine if secret is dynamic TODO use this
+	// determine if secret is dynamic (currently unused)
 	switch engine {
 	case database, aws:
 		vaultSecret.dynamic = true
