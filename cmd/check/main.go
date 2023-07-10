@@ -47,9 +47,8 @@ func main() {
 	inputVersion, _ := strconv.Atoi(checkRequest.Version.Version)
 	versions := []concourse.Version{}
 
-	// if getVersion could not be converted to int then this must be a dynamic secret because those are time converted strings
+	// if getVersion could not be converted to int then just use the original string
 	if err != nil {
-		// dummy response to getVersion TODO use getversion versus current time to determine renewal
 		versions = []concourse.Version{concourse.Version{Version: getVersion}}
 	} else {
 		// validate that the input version is <= the latest retrieved version

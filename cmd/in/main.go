@@ -35,8 +35,16 @@ func main() {
 				secret := vault.NewVaultSecret(secretParams.Engine, mount, secretPath)
 				// declare identifier and rawSecret
 				identifier := mount + "-" + secretPath
-				// return and assign the secret values for the given path
-				secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient, "")
+
+				if secretParams.Renew {
+					// determine lease id TODO this should really be improved
+					leaseId := mount + "/creds/" + secretPath
+					// return updated metadata for dynamic secret after lease renewal
+					secretMetadata, err = secret.Renew(vaultClient, leaseId)
+				} else {
+					// return and assign the secret values for the given path
+					secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient, "")
+				}
 				// convert rawSecret to concourse metadata and append to metadata
 				inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 			}
@@ -52,7 +60,7 @@ func main() {
 		inResponse.Metadata = append(inResponse.Metadata, helper.VaultToConcourseMetadata(identifier, secretMetadata)...)
 	}
 
-	// fatally exit if any secret Read operation failed
+	// fatally exit if any secret Read operation failed TODO non nil can be overwritten by later nil
 	if err != nil {
 		log.Fatal("one or more attempted secret Read operations failed")
 	}

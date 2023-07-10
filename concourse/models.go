@@ -26,6 +26,7 @@ type MetadataEntry struct {
 type secrets struct {
 	Engine string   `json:"engine"`
 	Paths  []string `json:"paths"`
+	Renew  bool     `json:"renew"`
 }
 
 // TODO potentially combine both below with above by converting Paths to any (also probably rename) and doing a bunch of type checks BUT wow that seems like not great cost/benefit

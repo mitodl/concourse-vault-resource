@@ -67,7 +67,9 @@ Example output for a KV2 secret with Concourse input version `1` and retrieved V
 
 **parameters**
 
-- `<secret_mount path>`: _required/optional_ Mutually exclusive with `source.secret`, but one of the two must be specified. One or more map/hash/dictionary of the following YAML schema for specifying the secrets to retrieve and/or generate.
+NOTE: For dynamic secret renewal the `path` must be suffixed with the same `/` and SHA suffix from its associated Lease ID (this can be inspected within the Concourse metadata returned when generating the initial dynamic secret).
+
+- `<secret_mount path>`: _required/optional_ Mutually exclusive with `source.secret`, but one of the two must be specified. One or more map/hash/dictionary of the following YAML schema for specifying the secrets to retrieve, generate, or renew.
 
 ```yaml
 <secret_mount_path>:
@@ -75,6 +77,7 @@ Example output for a KV2 secret with Concourse input version `1` and retrieved V
   - <path/to/secret>
   - <path/to/other_secret>
   engine: <secret engine> # supported values: database, aws, kv1, kv2
+  renew: false # whether to renew the dynamic secret(s) instead of generating
 ```
 
 **usage**
@@ -160,10 +163,16 @@ jobs:
   - get: my-code
   - get: vault
     params:
-      postres-mitxonline:
+      database-mitxonline:
         paths:
         - readonly
+        - other_readonly
         engine: database
+      database-two:
+        paths:
+        - admin/abcdefghijk123456789lmno
+        engine: database
+        renew: true
       secret:
         paths:
         - path/to/secret

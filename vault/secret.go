@@ -162,7 +162,7 @@ func (secret *vaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 }
 
 // renew dynamic secret lease and return updated metadata
-func (secret *vaultSecret) RenewSecret(client *vault.Client, leaseId string) (Metadata, error) {
+func (secret *vaultSecret) Renew(client *vault.Client, leaseId string) (Metadata, error) {
 	// validate secret is renewable TODO improve to *Secret.Renewable
 	if !secret.dynamic {
 		log.Printf("the input secret with engine %s at mount %s and path %s is not renewable", secret.engine, secret.mount, secret.path)
