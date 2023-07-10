@@ -36,11 +36,10 @@ func main() {
 				// declare identifier and rawSecret
 				identifier := mount + "-" + secretPath
 
+				// renew or retrieve/generate
 				if secretParams.Renew {
-					// determine lease id TODO this should really be improved
-					leaseId := mount + "/creds/" + secretPath
 					// return updated metadata for dynamic secret after lease renewal
-					secretMetadata, err = secret.Renew(vaultClient, leaseId)
+					inResponse.Version[identifier], secretMetadata, err = secret.Renew(vaultClient, secretPath)
 				} else {
 					// return and assign the secret values for the given path
 					secretValues[identifier], inResponse.Version[identifier], secretMetadata, err = secret.SecretValue(vaultClient, "")

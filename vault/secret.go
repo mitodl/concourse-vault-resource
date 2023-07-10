@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
 
 	vault "github.com/hashicorp/vault/api"
 )
@@ -162,21 +163,27 @@ func (secret *vaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 }
 
 // renew dynamic secret lease and return updated metadata
-func (secret *vaultSecret) Renew(client *vault.Client, leaseId string) (Metadata, error) {
-	// validate secret is renewable TODO improve to *Secret.Renewable
+func (secret *vaultSecret) Renew(client *vault.Client, leaseIdSuffix string) (string, Metadata, error) {
+	// semi-validate secret is renewable (better but not possible is *Secret.Renewable)
 	if !secret.dynamic {
 		log.Printf("the input secret with engine %s at mount %s and path %s is not renewable", secret.engine, secret.mount, secret.path)
-		return Metadata{}, nil
+		return "0", Metadata{}, nil
 	}
+
+	// determine full lease id TODO expand once more engines supported
+	leaseId := secret.mount + "/creds/" + leaseIdSuffix
 
 	// renew the secret lease
 	rawSecret, err := client.Sys().Renew(leaseId, 0)
 	if err != nil {
 		log.Printf("the secret with lease ID %s could not be renewed", leaseId)
 		log.Print(err)
-		return Metadata{}, err
+		return "0", Metadata{}, err
 	}
 
-	// convert raw secret to metadata and return
-	return rawSecretToMetadata(rawSecret), nil
+	// calculate the expiration time for version
+	expirationTime := time.Now().Local().Add(time.Second * time.Duration(rawSecret.LeaseDuration))
+
+	// convert raw secret to metadata and return metadata and version
+	return expirationTime.String(), rawSecretToMetadata(rawSecret), nil
 }
