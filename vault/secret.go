@@ -160,3 +160,23 @@ func (secret *vaultSecret) PopulateKVSecret(client *vault.Client, secretValue ma
 	// return no error
 	return strconv.Itoa(kvSecret.VersionMetadata.Version), rawSecretToMetadata(kvSecret.Raw), nil
 }
+
+// renew dynamic secret lease and return updated metadata
+func (secret *vaultSecret) RenewSecret(client *vault.Client, leaseId string) (Metadata, error) {
+	// validate secret is renewable TODO improve to *Secret.Renewable
+	if !secret.dynamic {
+		log.Printf("the input secret with engine %s at mount %s and path %s is not renewable", secret.engine, secret.mount, secret.path)
+		return Metadata{}, nil
+	}
+
+	// renew the secret lease
+	rawSecret, err := client.Sys().Renew(leaseId, 0)
+	if err != nil {
+		log.Printf("the secret with lease ID %s could not be renewed", leaseId)
+		log.Print(err)
+		return Metadata{}, err
+	}
+
+	// convert raw secret to metadata and return
+	return rawSecretToMetadata(rawSecret), nil
+}

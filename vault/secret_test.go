@@ -33,3 +33,5 @@ func TestNewVaultSecret(test *testing.T) {
 }
 
 // test secret Read operation
+
+// test secret renew
