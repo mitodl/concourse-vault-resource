@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/hashicorp/vault/api v1.10.0
-	github.com/hashicorp/vault/api/auth/aws v0.4.1
+	github.com/hashicorp/vault/api/auth/aws v0.5.0
 )
 
 require (
