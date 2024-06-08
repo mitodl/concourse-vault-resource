@@ -2,7 +2,7 @@ module github.com/mitodl/concourse-vault-resource
 
 go 1.21
 
-toolchain go1.22.3
+toolchain go1.22.4
 
 require (
 	github.com/hashicorp/vault/api v1.14.0
