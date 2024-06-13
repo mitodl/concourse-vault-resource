@@ -19,7 +19,7 @@ jobs:
     container: golang:1.22-alpine
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
     - name: install prereqs
       run: apk add --no-cache --update build-base
     - name: build
