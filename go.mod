@@ -6,7 +6,7 @@ toolchain go1.23.1
 
 require (
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/hashicorp/vault/api/auth/aws v0.7.0
+	github.com/hashicorp/vault/api/auth/aws v0.8.0
 )
 
 require (
