@@ -3,7 +3,7 @@ WORKDIR /go/src/github.com/mitodl/concourse-vault-plugin
 COPY . .
 RUN apk add make && make release
 
-FROM alpine:3.20
+FROM alpine:3.21
 WORKDIR /opt/resource
 COPY --from=build /go/src/github.com/mitodl/concourse-vault-plugin/check .
 COPY --from=build /go/src/github.com/mitodl/concourse-vault-plugin/in .
