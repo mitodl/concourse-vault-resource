@@ -16,7 +16,7 @@ on:
 jobs:
   go-build:
     runs-on: ubuntu-22.04
-    container: golang:1.26-alpine
+    container: golang:1.26-alpine@sha256:c2a1f7b2095d046ae14b286b18413a05bb82c9bca9b25fe7ff5efef0f0826166
     steps:
     - name: checkout
       uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
